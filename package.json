@@ -1,0 +1,22 @@
+{
+  "name": "iot_dex",
+  "version": "1.0.0",
+  "description": "IvanOnTech Academy: Ethereum Smart Contract Programming 201 - DEX Project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sedoy107/iot_dex.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/sedoy107/iot_dex/issues"
+  },
+  "homepage": "https://github.com/sedoy107/iot_dex#readme",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.2.0"
+  }
+}
