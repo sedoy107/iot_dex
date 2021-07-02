@@ -33,13 +33,21 @@ contract Wallet {
 
     /** 
     * @dev Deposit tokens to the wallet for `msg.sender`'s account
+    * 
+    * Requirements:
+    *
+    * - `msg.sender` cannot be equal to `tokenAddress`
+    *
     */
     function deposit(uint256 amount, bytes32 ticker) external {
+        require(tokenMapping[ticker].tokenAddress != msg.sender, "Wallet: can't send tokens to itself");
 
+        balances[msg.sender][ticker] = balances[msg.sender][ticker].add(amount);
+        IERC20(tokenMapping[ticker].tokenAddress).transfer(address(this), amount);
     }
 
     /** 
-    * @dev Withdraw tokens from the wallet for `msg.sender`'s account.
+    * @dev Withdraw token @ `tokenAddress` contract for `msg.sender`'s account.
     * 
     * Requirements:
     *
@@ -50,7 +58,7 @@ contract Wallet {
         require(tokenMapping[ticker].tokenAddress != address(0), "Wallet: no token balance for this address");
         require(balances[msg.sender][ticker] >= amount, "Wallet: insufficient balance");
 
-        balances[msg.sender][ticker] =  balances[msg.sender][ticker].sub(amount);
+        balances[msg.sender][ticker] = balances[msg.sender][ticker].sub(amount);
         IERC20(tokenMapping[ticker].tokenAddress).transfer(msg.sender, amount);
     }
 }
