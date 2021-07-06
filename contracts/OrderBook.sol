@@ -76,6 +76,9 @@ contract OrderBook {
                     orderBook[ticker][side][i] = orderBook[ticker][side][i - 1];
                     orderBook[ticker][side][i - 1] = order;
                 }
+                else {
+                    break;
+                }
             }
         }
         else {
@@ -84,6 +87,9 @@ contract OrderBook {
                     order = orderBook[ticker][side][i];
                     orderBook[ticker][side][i] = orderBook[ticker][side][i - 1];
                     orderBook[ticker][side][i - 1] = order;
+                }
+                else {
+                    break;
                 }
             }
         }

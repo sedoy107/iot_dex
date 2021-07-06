@@ -50,11 +50,11 @@ contract.only("OrderBook Test", async accounts => {
         */
         let orderbook = await OrderBook.deployed();
         let ticker = web3.utils.fromAscii("LINK");
+        let orderCount = 20;
 
-        await orderbook.createLimitBuyOrder(ticker, 10, 4);
-        await orderbook.createLimitBuyOrder(ticker, 12, 4);
-        await orderbook.createLimitBuyOrder(ticker, 9, 4);
-        await orderbook.createLimitBuyOrder(ticker, 7, 4);
+        for (let i = 0; i < orderCount; i++) {
+            await orderbook.createLimitBuyOrder(ticker, chance.integer({min:1, max:100}), 4);
+        }
 
         let orders = await orderbook.getBidOrderBook(ticker);
         let prices = orders.map(x => parseInt(x.price));
@@ -62,11 +62,9 @@ contract.only("OrderBook Test", async accounts => {
 
         assert.equal(Math.max.apply(null,prices), prices[length - 1], "Wrong maximum");
         assert.equal(Math.min.apply(null,prices),prices[0], "Wrong minimum");
-        assert(prices[0] < prices[1], "Wrong order");
-        assert(prices[1] < prices[2], "Wrong order");
-        assert(prices[2] < prices[3], "Wrong order");
-        
-
+        for (let i = 1; i < orderCount; i++) {
+            assert(prices[i - 1] <= prices[i], "Wrong order")
+        }
     });
     it("should correctly place SELL orders", async () => {
         // The BUY order with the highest price must be at the top of the BUY order book
@@ -79,11 +77,11 @@ contract.only("OrderBook Test", async accounts => {
          */
         let orderbook = await OrderBook.deployed();
         let ticker = web3.utils.fromAscii("LINK");
+        let orderCount = 20;
 
-        await orderbook.createLimitSellOrder(ticker, 10, 4);
-        await orderbook.createLimitSellOrder(ticker, 12, 4);
-        await orderbook.createLimitSellOrder(ticker, 9, 4);
-        await orderbook.createLimitSellOrder(ticker, 7, 4);
+        for (let i = 0; i < orderCount; i++) {
+            await orderbook.createLimitSellOrder(ticker, chance.integer({min:1, max:100}), 4);
+        }
 
         let orders = await orderbook.getAskOrderBook(ticker);
         let prices = orders.map(x => parseInt(x.price));
@@ -91,8 +89,8 @@ contract.only("OrderBook Test", async accounts => {
 
         assert.equal(Math.max.apply(null,prices), prices[0], "Wrong maximum");
         assert.equal(Math.min.apply(null,prices),prices[length - 1], "Wrong minimum");
-        assert(prices[0] > prices[1], "Wrong order");
-        assert(prices[1] > prices[2], "Wrong order");
-        assert(prices[2] > prices[3], "Wrong order");
+        for (let i = 1; i < orderCount; i++) {
+            assert(prices[i - 1] >= prices[i], "Wrong order")
+        }
     });
 }) 
