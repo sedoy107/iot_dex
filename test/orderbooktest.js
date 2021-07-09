@@ -39,8 +39,8 @@ contract.only("OrderBook Test", async accounts => {
             orderbook.createLimitSellOrder(ticker, 0, 0)
         )
     });
-    it("should correctly place BUY orders", async () => {
-        // THE SELL order with the lowest price must be at the top of the SELL order book
+    it("should place BUY orders sorted from lowest [0] to highest [length - 1]", async () => {
+        // THE BUY order with the lowest price must be at the top of the SELL order book
         /**
          * | Price | Amount |
          * |   2   |    4   | [0]
@@ -66,8 +66,8 @@ contract.only("OrderBook Test", async accounts => {
             assert(prices[i - 1] <= prices[i], "Wrong order")
         }
     });
-    it("should correctly place SELL orders", async () => {
-        // The BUY order with the highest price must be at the top of the BUY order book
+    it("should place SELL orders from highest [0] to lowest [length - 1]", async () => {
+        // The SELL order with the highest price must be at the top of the BUY order book
         /**
          * | Price | Amount |
          * |   2   |   10   | [3]
