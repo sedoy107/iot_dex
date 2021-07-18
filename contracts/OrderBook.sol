@@ -29,25 +29,54 @@ contract OrderBook {
 
     uint256 internal nextOrderId = 0;
 
-    function _getOrderBook (bytes32 tickerTo, bytes32 tickerFrom, uint8 side) internal view returns(Order[] memory) {
-        return orderBook[tickerTo][tickerFrom][Side(side)];
+    function getOrderBook(
+        Side side, 
+        bytes32 tickerTo, 
+        bytes32 tickerFrom
+    ) 
+    public 
+    view 
+    returns(Order[] memory)
+    {
+        return orderBook[tickerTo][tickerFrom][side];
     }
 
-    function getAskOrderBook (bytes32 tickerTo, bytes32 tickerFrom) external view returns(Order[] memory) {
-        return _getOrderBook(tickerTo, tickerFrom, uint8(Side.SELL));
-    }
-
-    function getBidOrderBook (bytes32 tickerTo, bytes32 tickerFrom) external view returns(Order[] memory) {
-        return _getOrderBook(tickerTo, tickerFrom, uint8(Side.BUY));
+    function getMarketPrice (
+        Side side, 
+        bytes32 tickerTo, 
+        bytes32 tickerFrom
+    ) 
+    public 
+    view 
+    returns (uint256) 
+    {
+        require(orderBook[tickerTo][tickerFrom][side].length > 0, "Market is not available");
+        
+        uint256 topIndex = orderBook[tickerTo][tickerFrom][side].length - 1;
+        return orderBook[tickerTo][tickerFrom][side][topIndex].price;
     }
 
     /**
-     * @dev creates an order to swap two tokens. 'amount` of tokens
-     * `tickerTo` are to beswapped for `tickerFrom` @ `price`
+     * @dev creates an order to swap two tokens:
+     *  `amount` of tokens `tickerTo` are to be swapped for tokens `tickerFrom` @ `price`
+     *
+     *  If `price` == 0 then it is  a market order.
+     *  Market order will not be created if the trading pair order book doesn't have orders.
      */
-    function _createOrder (Side side, bytes32 tickerTo, bytes32 tickerFrom, uint256 price, uint256 amount) internal {
-        require(price > 0, "OrderBook: zero price");
+    function createOrder (
+        Side side, 
+        bytes32 tickerTo, 
+        bytes32 tickerFrom, 
+        uint256 price, 
+        uint256 amount
+    )
+    public virtual 
+    {
         require(amount > 0, "OrderBook: zero amount");
+
+        if (price == 0)
+            price = getMarketPrice(side, tickerTo, tickerFrom);
+
         Order memory order = Order(
             nextOrderId,
             msg.sender,
@@ -61,20 +90,19 @@ contract OrderBook {
 
         nextOrderId++;
 
-        // push to the end mem->storage copy operation
-        // [1,1,2,2,3,4] BUY
-        // [5,4,3,2,1,1] SELL
         orderBook[tickerTo][tickerFrom][side].push(order);
-
-        // order stil holds the last element
 
         uint256 len = orderBook[tickerTo][tickerFrom][side].length;
 
-        // Start looping from `[len - 1]` to `[0]`
+        // Start looping from `[len - 1]` to `[0]` 
         // order can be reused as a temp variable
         if (side == Side.BUY) {
             for (uint256 i = len - 1; i > 0; i--) {
-                if (orderBook[tickerTo][tickerFrom][side][i - 1].price > orderBook[tickerTo][tickerFrom][side][i].price) {
+                if (
+                    orderBook[tickerTo][tickerFrom][side][i - 1].price > 
+                    orderBook[tickerTo][tickerFrom][side][i].price
+                )
+                {
                     order = orderBook[tickerTo][tickerFrom][side][i];
                     orderBook[tickerTo][tickerFrom][side][i] = orderBook[tickerTo][tickerFrom][side][i - 1];
                     orderBook[tickerTo][tickerFrom][side][i - 1] = order;
@@ -86,7 +114,11 @@ contract OrderBook {
         }
         else {
             for (uint256 i = len - 1; i > 0; i--) {
-                if (orderBook[tickerTo][tickerFrom][side][i - 1].price < orderBook[tickerTo][tickerFrom][side][i].price) {
+                if (
+                    orderBook[tickerTo][tickerFrom][side][i - 1].price < 
+                    orderBook[tickerTo][tickerFrom][side][i].price
+                )
+                {
                     order = orderBook[tickerTo][tickerFrom][side][i];
                     orderBook[tickerTo][tickerFrom][side][i] = orderBook[tickerTo][tickerFrom][side][i - 1];
                     orderBook[tickerTo][tickerFrom][side][i - 1] = order;
@@ -96,39 +128,5 @@ contract OrderBook {
                 }
             }
         }
-    }
-
-    function _createLimitOrder (Side side, bytes32 tickerTo, bytes32 tickerFrom, uint256 price, uint256 amount) internal {
-        _createOrder(side, tickerTo, tickerFrom, price, amount);
-    }
-
-    function createLimitBuyOrder (bytes32 tickerTo, bytes32 tickerFrom, uint256 price, uint256 amount) external {
-        // Must have enough
-        _createLimitOrder(Side.BUY, tickerTo, tickerFrom, price, amount);
-
-    }
-
-    function createLimitSellOrder (bytes32 tickerTo, bytes32 tickerFrom, uint256 price, uint256 amount) external {
-        _createLimitOrder(Side.SELL, tickerTo, tickerFrom, price, amount);
-
-    }
-
-    function _createMarketOrder (Side side, bytes32 tickerTo, bytes32 tickerFrom, uint256 amount) internal {
-        uint256 price;
-        // If the orderBook is empty then the exchange reate goes 1-to-1
-        if (orderBook[tickerTo][tickerFrom][side].length == 0)
-            price = 1;
-        // Otherwise, use the bset price from the top of the orderBook
-        else
-            price = orderBook[tickerTo][tickerFrom][side][orderBook[tickerTo][tickerFrom][side].length - 1].price;
-        _createOrder(side, tickerTo, tickerFrom, price, amount);
-    }
-
-    function createMarketBuyOrder (bytes32 tickerTo, bytes32 tickerFrom, uint256 amount) external {
-        _createMarketOrder(Side.BUY, tickerTo, tickerFrom, amount);
-    }
-
-    function createMarketSellOrder(bytes32 tickerTo, bytes32 tickerFrom, uint256 amount) external {
-        _createMarketOrder(Side.SELL, tickerTo, tickerFrom, amount);
     }
 }

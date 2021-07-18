@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-/*
+
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
@@ -11,57 +11,71 @@ contract Dex is Wallet, OrderBook {
 
     using Math for uint256;
 
-    // event LimitBuyOrderCreated (address trader, bytes32 indexed ticker, uint256 indexed price , uint256 indexed amount);
-    // event LimitSellOrderCreated (address trader, bytes32 indexed ticker, uint256 indexed price , uint256 indexed amount);
-    // event MarketBuyOrderCreated (address trader, bytes32 indexed ticker, uint256 indexed amount);
-    // event MarketSellOrderCreated (address trader, bytes32 indexed ticker, uint256 indexed amount);
-    // event BuyOrderFilled (address trader, bytes32 indexed ticker, uint256 indexed price, uint256 indexed amount);
-    // event SellOrderFilled (address trader, bytes32 indexed ticker, uint256 indexed price, uint256 indexed amount);
-    event OrderCreated(Side side, bytes32 tickerTo, bytes tickerFrom, uint256 price, uint256 amount);
+    event OrderCreated(
+        Side side, 
+        bytes32 tickerTo, 
+        bytes32 tickerFrom, 
+        uint256 price, 
+        uint256 amount
+    );
 
-    function processSwaps(bytes32 ticker) private {
-        uint256 minLen;
-        
+    function processSwaps(bytes32 tickerTo, bytes32 tickerFrom) private {
         // BUY and SELL `orderBook`s must both have entries
-        while (orderBook[ticker][Side.SELL].length > 0 && orderBook[ticker][Side.BUY].length > 0) {
-            // Get top SELL and BUY orders
-            Order storage topBuyOrder = orderBook[ticker][Side.BUY][ orderBook[ticker][Side.BUY].length - 1 ];
-            Order storage topSellOrder = orderBook[ticker][Side.BUY][ orderBook[ticker][Side.SELL].length - 1 ];
-
-            // Match the orders
-            uint256 fillAmount = Math.min(topBuyOrder.amount, topSellOrder.amount);
-            // Increase filled amount for Buyer and decrease for Seller
-            topBuyOrder.filled += fillAmount;
-            topSellOrder.filled -= fillAmount;
-            // Increase `trader`'s amount in the `Wallet` for buyer and decrease for seller
-            balances[topBuyOrder.trader][ticker] += fillAmount;
-            balances[topSellOrder.trader][ticker] -= fillAmount;
-
-            //
-        }
-
-        // Identify the minimum length that will be used to loop through the order book
-        if(orderBook[ticker][Side.SELL].length > orderBook[ticker][Side.BUY].length)
-            minLen = orderBook[ticker][Side.BUY].length;
-        else
-            minLen = orderBook[ticker][Side.SELL].length;
-
-        // Loop throught the BUY and SELL order books
-        for (uint256 i = 0; i < minLen; i++) {
+        while (
+            orderBook[tickerTo][tickerFrom][Side.SELL].length > 0 && 
+            orderBook[tickerTo][tickerFrom][Side.BUY].length > 0
+        ) 
+        {    
+            // Get top BUY order
+            uint256 topBuyIndex = orderBook[tickerTo][tickerFrom][Side.BUY].length - 1;
+            Order storage topBuyOrder = orderBook[tickerTo][tickerFrom][Side.BUY][topBuyIndex];
             
-            //wqq
+            // Get top SELL order
+            uint256 topSellIndex = orderBook[tickerTo][tickerFrom][Side.SELL].length - 1;
+            Order storage topSellOrder = orderBook[tickerTo][tickerFrom][Side.BUY][topSellIndex];
 
-        }
+            // Calculate the current order fill amount
+            uint256 fillAmountTo = Math.min(topBuyOrder.amount, topSellOrder.amount);
+            uint256 fillAmountFrom = Math.min(
+                topBuyOrder.amount * topBuyOrder.price, 
+                topSellOrder.amount * topBuyOrder.price
+            );
+            
+            // Increase tickerTo and decrease tickerFrom tokens in buyer's wallet
+            balances[topBuyOrder.trader][tickerTo] += fillAmountTo;
+            balances[topBuyOrder.trader][tickerFrom] -= fillAmountFrom;
+
+            // Decrease tickerTo and increase tickerFrom tokens in sellers's wallet
+            balances[topSellOrder.trader][tickerTo] -= fillAmountTo;
+            balances[topSellOrder.trader][tickerTo] += fillAmountFrom;
+
+            // Increase filled amount for both, buyer seller
+            topBuyOrder.filled += fillAmountTo;
+            topSellOrder.filled += fillAmountTo;
+
+            // If orders' filled == amount, then the order can be popped
+            if (topBuyOrder.filled == topBuyOrder.amount)
+                orderBook[tickerTo][tickerFrom][Side.BUY].pop();
+
+            if (topSellOrder.filled == topSellOrder.amount)
+                orderBook[tickerTo][tickerFrom][Side.SELL].pop();
+            }
     }
 
-    function createOrder (Side side, bytes32 ticker, uint256 price, uint256 amount) external {
+    function createOrder (
+        Side side, 
+        bytes32 tickerTo,
+        bytes32 tickerFrom, 
+        uint256 price, 
+        uint256 amount
+    )
+    public virtual override {
 
-        _createOrder(side, ticker, price, amount);
+        super.createOrder(side, tickerTo, tickerFrom, price, amount);
 
-        processSwaps(ticker);
+        processSwaps(tickerTo, tickerFrom);
 
-        emit OrderCreated(side, ticker, price, amount);
+        emit OrderCreated(side, tickerTo, tickerFrom, price, amount);
     }
 
 }
-*/
