@@ -165,7 +165,7 @@ contract.only("OrderBook Test2", async accounts => {
             let tickerTo = web3.utils.fromAscii("LINK");
             let tickerFrom = web3.utils.fromAscii("MATIC");
 
-            let orders = await orderbook.getBidOrderBook(tickerTo, TickerFrom);
+            let orders = await orderbook.getBidOrderBook(tickerTo, tickerFrom);
             let prices = orders.map(x => parseInt(x.price));
             let bestPrice = prices.slice(-1)[0];
 

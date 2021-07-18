@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-
+/*
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
@@ -17,7 +17,7 @@ contract Dex is Wallet, OrderBook {
     // event MarketSellOrderCreated (address trader, bytes32 indexed ticker, uint256 indexed amount);
     // event BuyOrderFilled (address trader, bytes32 indexed ticker, uint256 indexed price, uint256 indexed amount);
     // event SellOrderFilled (address trader, bytes32 indexed ticker, uint256 indexed price, uint256 indexed amount);
-    event OrderCreated(Side side, bytes32 ticker, uint256 price, uint256 amount);
+    event OrderCreated(Side side, bytes32 tickerTo, bytes tickerFrom, uint256 price, uint256 amount);
 
     function processSwaps(bytes32 ticker) private {
         uint256 minLen;
@@ -64,3 +64,4 @@ contract Dex is Wallet, OrderBook {
     }
 
 }
+*/
