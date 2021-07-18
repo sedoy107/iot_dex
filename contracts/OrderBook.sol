@@ -42,8 +42,8 @@ contract OrderBook {
     }
 
     /**
-     * @dev creates an order to swap two tokens. 'amount` of tokens are to be 
-     * swapped as `ticker1` for `ticker2` pair @ `price`
+     * @dev creates an order to swap two tokens. 'amount` of tokens
+     * `tickerTo` are to beswapped for `tickerFrom` @ `price`
      */
     function _createOrder (Side side, bytes32 tickerTo, bytes32 tickerFrom, uint256 price, uint256 amount) internal {
         require(price > 0, "OrderBook: zero price");
