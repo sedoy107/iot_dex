@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 pragma abicoder v2;
 
 contract OrderBook {
-
+    
     enum Side {
         BUY,
         SELL
@@ -14,46 +14,49 @@ contract OrderBook {
         uint256 id;
         address trader;
         Side side;
-        bytes32 ticker;
+        bytes32 ticker1;
+        bytes32 ticker2;
         uint256 amount;
         uint256 price;
+        uint256 filled;
     }
 
     /**
      * @dev `Order[]` should be pop'able. Simple push is not an option as it increases the index
      * and causes the array to grow forever.
      */
-    mapping (bytes32 => mapping (Side => Order[])) private orderBook;
+    mapping (bytes32 => mapping (bytes32 => mapping (Side => Order[]))) internal orderBook;
 
-    uint256 nextOrderId = 0;
+    uint256 internal nextOrderId = 0;
 
-    event LimitBuyOrderCreated (address trader, bytes32 indexed ticker, uint256 indexed price , uint256 indexed amount);
-    event LimitSellOrderCreated (address trader, bytes32 indexed ticker, uint256 indexed price , uint256 indexed amount);
-    event BuyOrderFilled (address trader, bytes32 indexed ticker, uint256 indexed price, uint256 indexed amount);
-    event SellOrderFilled (address trader, bytes32 indexed ticker, uint256 indexed price, uint256 indexed amount);
-
-    function _getOrderBook (bytes32 ticker, uint8 side) private view returns(Order[] memory) {
-        return orderBook[ticker][Side(side)];
+    function _getOrderBook (bytes32 tickerTo, bytes32 tickerFrom, uint8 side) internal view returns(Order[] memory) {
+        return orderBook[tickerTo][tickerFrom][Side(side)];
     }
 
-    function getAskOrderBook (bytes32 ticker) public view returns(Order[] memory) {
-        return _getOrderBook(ticker, uint8(Side.SELL));
+    function getAskOrderBook (bytes32 tickerTo, bytes32 tickerFrom) external view returns(Order[] memory) {
+        return _getOrderBook(tickerTo, tickerFrom, uint8(Side.SELL));
     }
 
-    function getBidOrderBook (bytes32 ticker) public view returns(Order[] memory) {
-        return _getOrderBook(ticker, uint8(Side.BUY));
+    function getBidOrderBook (bytes32 tickerTo, bytes32 tickerFrom) external view returns(Order[] memory) {
+        return _getOrderBook(tickerTo, tickerFrom, uint8(Side.BUY));
     }
 
-    function _createLimitOrder (Side side, bytes32 ticker, uint256 price, uint256 amount) private {
+    /**
+     * @dev creates an order to swap two tokens. 'amount` of tokens are to be 
+     * swapped as `ticker1` for `ticker2` pair @ `price`
+     */
+    function _createOrder (Side side, bytes32 tickerTo, bytes32 tickerFrom, uint256 price, uint256 amount) internal {
         require(price > 0, "OrderBook: zero price");
         require(amount > 0, "OrderBook: zero amount");
         Order memory order = Order(
             nextOrderId,
             msg.sender,
             side,
-            ticker,
+            tickerTo,
+            tickerFrom,
             amount,
-            price
+            price,
+            0
         );
 
         nextOrderId++;
@@ -61,20 +64,20 @@ contract OrderBook {
         // push to the end mem->storage copy operation
         // [1,1,2,2,3,4] BUY
         // [5,4,3,2,1,1] SELL
-        orderBook[ticker][side].push(order);
+        orderBook[tickerTo][tickerFrom][side].push(order);
 
         // order stil holds the last element
 
-        uint256 len = orderBook[ticker][side].length;
+        uint256 len = orderBook[tickerTo][tickerFrom][side].length;
 
         // Start looping from `[len - 1]` to `[0]`
         // order can be reused as a temp variable
         if (side == Side.BUY) {
             for (uint256 i = len - 1; i > 0; i--) {
-                if (orderBook[ticker][side][i - 1].price > orderBook[ticker][side][i].price) {
-                    order = orderBook[ticker][side][i];
-                    orderBook[ticker][side][i] = orderBook[ticker][side][i - 1];
-                    orderBook[ticker][side][i - 1] = order;
+                if (orderBook[tickerTo][tickerFrom][side][i - 1].price > orderBook[tickerTo][tickerFrom][side][i].price) {
+                    order = orderBook[tickerTo][tickerFrom][side][i];
+                    orderBook[tickerTo][tickerFrom][side][i] = orderBook[tickerTo][tickerFrom][side][i - 1];
+                    orderBook[tickerTo][tickerFrom][side][i - 1] = order;
                 }
                 else {
                     break;
@@ -83,10 +86,10 @@ contract OrderBook {
         }
         else {
             for (uint256 i = len - 1; i > 0; i--) {
-                if (orderBook[ticker][side][i - 1].price < orderBook[ticker][side][i].price) {
-                    order = orderBook[ticker][side][i];
-                    orderBook[ticker][side][i] = orderBook[ticker][side][i - 1];
-                    orderBook[ticker][side][i - 1] = order;
+                if (orderBook[tickerTo][tickerFrom][side][i - 1].price < orderBook[tickerTo][tickerFrom][side][i].price) {
+                    order = orderBook[tickerTo][tickerFrom][side][i];
+                    orderBook[tickerTo][tickerFrom][side][i] = orderBook[tickerTo][tickerFrom][side][i - 1];
+                    orderBook[tickerTo][tickerFrom][side][i - 1] = order;
                 }
                 else {
                     break;
@@ -95,19 +98,37 @@ contract OrderBook {
         }
     }
 
-    function createLimitBuyOrder (bytes32 ticker, uint256 price, uint256 amount) external virtual {
-        _createLimitOrder(Side.BUY, ticker, price, amount);
-        emit LimitBuyOrderCreated(msg.sender, ticker, price, amount);
+    function _createLimitOrder (Side side, bytes32 tickerTo, bytes32 tickerFrom, uint256 price, uint256 amount) internal {
+        _createOrder(side, tickerTo, tickerFrom, price, amount);
+    }
+
+    function createLimitBuyOrder (bytes32 tickerTo, bytes32 tickerFrom, uint256 price, uint256 amount) external {
+        // Must have enough
+        _createLimitOrder(Side.BUY, tickerTo, tickerFrom, price, amount);
 
     }
 
-    function createLimitSellOrder (bytes32 ticker, uint256 price, uint256 amount) external virtual {
-        _createLimitOrder(Side.SELL, ticker, price, amount);
-        emit LimitSellOrderCreated(msg.sender, ticker, price, amount);
+    function createLimitSellOrder (bytes32 tickerTo, bytes32 tickerFrom, uint256 price, uint256 amount) external {
+        _createLimitOrder(Side.SELL, tickerTo, tickerFrom, price, amount);
 
     }
 
-    function createMarketOrder (bytes32 ticker, uint256 amount) external virtual {
+    function _createMarketOrder (Side side, bytes32 tickerTo, bytes32 tickerFrom, uint256 amount) internal {
+        uint256 price;
+        // If the orderBook is empty then the exchange reate goes 1-to-1
+        if (orderBook[tickerTo][tickerFrom][side].length == 0)
+            price = 1;
+        // Otherwise, use the bset price from the top of the orderBook
+        else
+            price = orderBook[tickerTo][tickerFrom][side][orderBook[tickerTo][tickerFrom][side].length - 1].price;
+        _createOrder(side, tickerTo, tickerFrom, price, amount);
+    }
 
+    function createMarketBuyOrder (bytes32 tickerTo, bytes32 tickerFrom, uint256 amount) external {
+        _createMarketOrder(Side.BUY, tickerTo, tickerFrom, amount);
+    }
+
+    function createMarketSellOrder(bytes32 tickerTo, bytes32 tickerFrom, uint256 amount) external {
+        _createMarketOrder(Side.SELL, tickerTo, tickerFrom, amount);
     }
 }
