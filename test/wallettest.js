@@ -8,23 +8,8 @@ const truffleAssert = require('../node_modules/truffle-assertions');
 // references for convenience
 const toBN = web3.utils.toBN;
 const fromUtf8 = web3.utils.fromUtf8;
-
-contract("ERC20 Token Test", async accounts => {
-    describe("Token Attributes Test", async () => {
-        it("ERC20 token symbol must be \"LINK\"", async () => {
-            let link = await Link.deployed();
-            let symbol = await link.symbol();
-            assert.equal(symbol, "LINK");
-        });
-        it("balance of `accounts[0]` must be 1000 LINK", async () => {
-            let link = await Link.deployed();
-            let balance = await link.balanceOf(accounts[0]);
-            assert.equal(balance.toNumber(), 1000);
-        });
-    });
-});
  
-contract("Wallet Test #1", async accounts => {
+contract("Wallet Test", async accounts => {
     describe("Add ERC20 to wallet", async () => {
         it("should only be possible for owner to add token", async () => {
             let wallet = await Wallet.deployed();
@@ -39,7 +24,52 @@ contract("Wallet Test #1", async accounts => {
             );
         });
     });
-    describe("ERC20 deposit / withdrowal", async () => {
+    describe("ETHER deposit / withdrawal", async () => {
+        it("should handle deposits correctly", async () => {
+            let wallet = await Wallet.deployed();
+            let ethTicker = fromUtf8("ETH");
+
+            let balances = {
+                1 : 10 ** 5,
+                2 : 10 ** 4,
+                3 : 10 ** 3,
+            }
+
+            for ( let i in balances ) {
+                await wallet.methods['deposit()']({from: accounts[i], value: balances[i]});
+
+                let accountBalance = (await wallet.balances(accounts[i], ethTicker)).toNumber();
+
+                console.log("deposited to accounts[" + i + "]:" + accountBalance);
+
+                assert.equal(accountBalance, balances[i], "Balances do not match");
+            }
+        });
+        it("should handle withdrawals correctly", async () => {
+            let wallet = await Wallet.deployed();
+            let ethTicker = fromUtf8("ETH");
+
+            await truffleAssert.reverts ( wallet.withdraw(100, {from: accounts[4]}) );
+
+            let balances = {
+                1 : 10 ** 5,
+                2 : 10 ** 4,
+                3 : 10 ** 3,
+            }
+
+            for ( let i in balances ) {
+                await truffleAssert.reverts ( wallet.methods['withdraw(uint256)'](balances[i] + 1, {from: accounts[i]}) );
+                await truffleAssert.passes ( wallet.methods['withdraw(uint256)'](balances[i], {from: accounts[i]}) );
+
+                let accountBalance = (await wallet.balances(accounts[i], ethTicker)).toNumber();
+
+                console.log("withdrawn from accounts[" + i + "]:" + balances[i]);
+                
+                assert.equal(accountBalance, 0, "Balance MUST be zero");
+            }
+        });
+    });
+    describe("ERC20 deposit / withdrawal", async () => {
         it("should handle deposits correctly", async () => {
             let wallet = await Wallet.deployed();
             let link = await Link.deployed();

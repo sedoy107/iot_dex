@@ -10,6 +10,8 @@ contract Wallet is Ownable {
 
     using SafeMath for uint256;
 
+    bytes32 constant ethTicker = 0x4554480000000000000000000000000000000000000000000000000000000000;
+
     struct Token {
         bytes32 ticker;
         address tokenAddress;
@@ -37,6 +39,20 @@ contract Wallet is Ownable {
         tokenList.push(ticker);
     }
 
+    
+    /** 
+    * @dev Deposit ether to the wallet for `msg.sender`'s account
+    * 
+    * Requirements:
+    *
+    * - `msg.sender` cannot be equal to this(address).
+    */
+    function deposit() external payable {
+        require(address(this) != msg.sender, "Wallet: can't send ether to itself");
+
+        balances[msg.sender][ethTicker] += msg.value;
+    }
+
     /** 
     * @dev Deposit tokens to the wallet for `msg.sender`'s account
     * 
@@ -57,11 +73,25 @@ contract Wallet is Ownable {
     * 
     * Requirements:
     *
+    * - `msg.sender` MUST have a sufficient balance of ether to withdraw.
+    */
+    function withdraw(uint256 amount) external {
+        require(balances[msg.sender][ethTicker] >= amount, "Wallet: insufficient ether balance");
+
+        balances[msg.sender][ethTicker] = balances[msg.sender][ethTicker].sub(amount);
+        payable(address(msg.sender)).transfer(amount);
+    }
+
+    /** 
+    * @dev Withdraw token @ `tokenAddress` contract for `msg.sender`'s account.
+    * 
+    * Requirements:
+    *
     * - `msg.sender` MUST have a sufficient balance of tokens being withdrawn.
     * - Token `ticker` MUST be present in `tokenMapping`.
     */
     function withdraw(uint256 amount, bytes32 ticker) external tokenExists(ticker) {
-        require(balances[msg.sender][ticker] >= amount, "Wallet: insufficient balance");
+        require(balances[msg.sender][ticker] >= amount, "Wallet: insufficient token balance");
 
         balances[msg.sender][ticker] = balances[msg.sender][ticker].sub(amount);
         IERC20(tokenMapping[ticker].tokenAddress).transfer(msg.sender, amount);

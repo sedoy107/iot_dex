@@ -12,6 +12,7 @@ contract Dex is Wallet, OrderBook {
     using Math for uint256;
 
     event OrderCreated(
+        address indexed trader,
         Side side, 
         bytes32 tickerTo, 
         bytes32 tickerFrom, 
@@ -32,14 +33,18 @@ contract Dex is Wallet, OrderBook {
             
             // Get top SELL order
             uint256 topSellIndex = orderBook[tickerTo][tickerFrom][Side.SELL].length - 1;
-            Order storage topSellOrder = orderBook[tickerTo][tickerFrom][Side.BUY][topSellIndex];
+            Order storage topSellOrder = orderBook[tickerTo][tickerFrom][Side.SELL][topSellIndex];
 
-            // Calculate the current order fill amount
-            uint256 fillAmountTo = Math.min(topBuyOrder.amount, topSellOrder.amount);
-            uint256 fillAmountFrom = Math.min(
-                topBuyOrder.amount * topBuyOrder.price, 
-                topSellOrder.amount * topBuyOrder.price
-            );
+            // If buyer's price is less then seller's price then order can't be filled
+            if (topBuyOrder.price < topSellOrder.price)
+                break;
+
+            // Calculate the current order fill amount. 
+            // Take into account the partly filled amounts by subtracting already filled tokes from the total amount
+            uint256 a = topBuyOrder.amount - topBuyOrder.filled;
+            uint256 b = topSellOrder.amount - topSellOrder.filled;
+            uint256 fillAmountTo = Math.min(a, b);
+            uint256 fillAmountFrom = Math.min(a, b) * topSellOrder.price;
             
             // Increase tickerTo and decrease tickerFrom tokens in buyer's wallet
             balances[topBuyOrder.trader][tickerTo] += fillAmountTo;
@@ -47,19 +52,26 @@ contract Dex is Wallet, OrderBook {
 
             // Decrease tickerTo and increase tickerFrom tokens in sellers's wallet
             balances[topSellOrder.trader][tickerTo] -= fillAmountTo;
-            balances[topSellOrder.trader][tickerTo] += fillAmountFrom;
+            balances[topSellOrder.trader][tickerFrom] += fillAmountFrom;
 
             // Increase filled amount for both, buyer seller
             topBuyOrder.filled += fillAmountTo;
             topSellOrder.filled += fillAmountTo;
 
-            // If orders' filled == amount, then the order can be popped
-            if (topBuyOrder.filled == topBuyOrder.amount)
-                orderBook[tickerTo][tickerFrom][Side.BUY].pop();
+            assert(topBuyOrder.filled <= topBuyOrder.amount);
+            assert(topSellOrder.filled <= topSellOrder.amount);
 
-            if (topSellOrder.filled == topSellOrder.amount)
+            // If order.filled == amount, then the order can be popped
+            if (topBuyOrder.filled == topBuyOrder.amount) {
+                delete orderBook[tickerTo][tickerFrom][Side.BUY][topBuyIndex];
+                orderBook[tickerTo][tickerFrom][Side.BUY].pop();
+            }
+
+            if (topSellOrder.filled == topSellOrder.amount) {
+                delete orderBook[tickerTo][tickerFrom][Side.SELL][topSellIndex];
                 orderBook[tickerTo][tickerFrom][Side.SELL].pop();
             }
+        }
     }
 
     function createOrder (
@@ -69,13 +81,26 @@ contract Dex is Wallet, OrderBook {
         uint256 price, 
         uint256 amount
     )
-    public virtual override {
+    public virtual override returns (uint256) {
+        // Buyer can't swap for tokens he doesn't have
+        if (side == Side.BUY) {
+            uint256 buyersTokensToSwapBalance = balances[msg.sender][tickerFrom];
+            require(buyersTokensToSwapBalance >= price * amount, "Dex: Buyer doesn't have enough tokes");
+        }
+        else {
+            // Seller can't offer tokens for swap he doesn't have
+            uint256 sellersTokensToSwapBalance = balances[msg.sender][tickerTo];
+            require(sellersTokensToSwapBalance >= amount, "Dex: Seller doesn't have enough tokes");
+        }
 
-        super.createOrder(side, tickerTo, tickerFrom, price, amount);
+        uint256 orderId = super.createOrder(side, tickerTo, tickerFrom, price, amount);
+        address trader = orderBook[tickerTo][tickerFrom][side][orderId].trader;
 
         processSwaps(tickerTo, tickerFrom);
 
-        emit OrderCreated(side, tickerTo, tickerFrom, price, amount);
+        emit OrderCreated(trader, side, tickerTo, tickerFrom, price, amount);
+
+        return orderId;
     }
 
 }

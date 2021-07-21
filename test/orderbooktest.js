@@ -13,30 +13,30 @@ const fromUtf8 = web3.utils.fromUtf8;
 const BUY = 0;
 const SELL = 1;
  
-contract.only("OrderBook Test", async accounts => {
+contract("OrderBook Test", async accounts => {
     describe("Generic", async () => {
         it("should correctly handle orders with amount == 0", async () => {
-            let orderbook = await OrderBook.deployed();
+            let orderBook = await OrderBook.deployed();
             let tickerTo = web3.utils.fromAscii("LINK");
             let tickerFrom = web3.utils.fromAscii("MATIC");
 
             await truffleAssert.reverts(
-                orderbook.createOrder(BUY, tickerTo, tickerFrom, 0, 0)
+                orderBook.createOrder(BUY, tickerTo, tickerFrom, 0, 0)
             )
             await truffleAssert.reverts(
-                orderbook.createOrder(SELL, tickerTo, tickerFrom, 0, 0)
+                orderBook.createOrder(SELL, tickerTo, tickerFrom, 0, 0)
             )
         });
         it("should not place market orders when order book is empty", async () => {
-            let orderbook = await OrderBook.deployed();
+            let orderBook = await OrderBook.deployed();
             let tickerTo = web3.utils.fromAscii("LINK");
             let tickerFrom = web3.utils.fromAscii("MATIC");
 
             await truffleAssert.reverts(
-                orderbook.createOrder(BUY, tickerTo, tickerFrom, 0, 5)
+                orderBook.createOrder(BUY, tickerTo, tickerFrom, 0, 5)
             )
             await truffleAssert.reverts(
-                orderbook.createOrder(SELL, tickerTo, tickerFrom, 0, 5)
+                orderBook.createOrder(SELL, tickerTo, tickerFrom, 0, 5)
             )
         });
     });
@@ -50,16 +50,16 @@ contract.only("OrderBook Test", async accounts => {
              * |   8   |   12   | [2]
              * |  10   |   13   | [3]
             */
-            let orderbook = await OrderBook.deployed();
+            let orderBook = await OrderBook.deployed();
             let tickerTo = web3.utils.fromAscii("LINK");
             let tickerFrom = web3.utils.fromAscii("MATIC");
             let orderCount = 20;
 
             for (let i = 0; i < orderCount; i++) {
-                await orderbook.createOrder(BUY, tickerTo, tickerFrom, chance.integer({min:1, max:100}), 4);
+                await orderBook.createOrder(BUY, tickerTo, tickerFrom, chance.integer({min:1, max:100}), 4);
             }
 
-            let orders = await orderbook.getOrderBook(BUY, tickerTo, tickerFrom);
+            let orders = await orderBook.getOrderBook(BUY, tickerTo, tickerFrom);
             let prices = orders.map(x => parseInt(x.price));
             let length = prices.length;
 
@@ -78,16 +78,16 @@ contract.only("OrderBook Test", async accounts => {
              * |   8   |    6   | [1]
              * |  10   |    5   | [0]
              */
-            let orderbook = await OrderBook.deployed();
+            let orderBook = await OrderBook.deployed();
             let tickerTo = web3.utils.fromAscii("LINK");
             let tickerFrom = web3.utils.fromAscii("MATIC");
             let orderCount = 5;
 
             for (let i = 0; i < orderCount; i++) {
-                await orderbook.createOrder(SELL, tickerTo, tickerFrom, chance.integer({min:1, max:100}), 4);
+                await orderBook.createOrder(SELL, tickerTo, tickerFrom, chance.integer({min:1, max:100}), 4);
             }
 
-            let orders = await orderbook.getOrderBook(SELL, tickerTo, tickerFrom);
+            let orders = await orderBook.getOrderBook(SELL, tickerTo, tickerFrom);
             let prices = orders.map(x => parseInt(x.price));
             let length = prices.length;
 
@@ -108,18 +108,18 @@ contract.only("OrderBook Test", async accounts => {
              * |   8   |    6   | [1]
              * |  10   |    5   | [0]
              */
-            let orderbook = await OrderBook.deployed();
+            let orderBook = await OrderBook.deployed();
             let tickerTo = web3.utils.fromAscii("LINK");
             let tickerFrom = web3.utils.fromAscii("MATIC");
 
             // Retrieve bestPrice
-            let orders = await orderbook.getOrderBook(SELL, tickerTo, tickerFrom);
+            let orders = await orderBook.getOrderBook(SELL, tickerTo, tickerFrom);
             let prices = orders.map(x => parseInt(x.price));
             let bestPrice = prices.slice(-1)[0];
 
-            await orderbook.createOrder(SELL, tickerTo, tickerFrom, 0, 4);
+            await orderBook.createOrder(SELL, tickerTo, tickerFrom, 0, 4);
 
-            orders = await orderbook.getOrderBook(SELL, tickerTo, tickerFrom);
+            orders = await orderBook.getOrderBook(SELL, tickerTo, tickerFrom);
             prices = orders.map(x => parseInt(x.price));
 
             assert.equal(Math.min.apply(null,prices), bestPrice, "bestPrice must be minimum");
@@ -134,18 +134,18 @@ contract.only("OrderBook Test", async accounts => {
              * |   8   |   12   | [2]
              * |  10   |   13   | [3]
             */
-            let orderbook = await OrderBook.deployed();
+            let orderBook = await OrderBook.deployed();
             let tickerTo = web3.utils.fromAscii("LINK");
             let tickerFrom = web3.utils.fromAscii("MATIC");
 
             // Retrieve bestPrice
-            let orders = await orderbook.getOrderBook(BUY, tickerTo, tickerFrom);
+            let orders = await orderBook.getOrderBook(BUY, tickerTo, tickerFrom);
             let prices = orders.map(x => parseInt(x.price));
             let bestPrice = prices.slice(-1)[0];
 
-            await orderbook.createOrder(BUY, tickerTo, tickerFrom, 0, 4);
+            await orderBook.createOrder(BUY, tickerTo, tickerFrom, 0, 4);
 
-            orders = await orderbook.getOrderBook(BUY, tickerTo, tickerFrom);
+            orders = await orderBook.getOrderBook(BUY, tickerTo, tickerFrom);
             prices = orders.map(x => parseInt(x.price));
 
             assert.equal(Math.max.apply(null,prices), bestPrice, "bestPrice must be minimum");

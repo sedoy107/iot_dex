@@ -70,7 +70,7 @@ contract OrderBook {
         uint256 price, 
         uint256 amount
     )
-    public virtual 
+    public virtual returns (uint256)
     {
         require(amount > 0, "OrderBook: zero amount");
 
@@ -128,5 +128,7 @@ contract OrderBook {
                 }
             }
         }
+
+        return len - 1;
     }
 }
