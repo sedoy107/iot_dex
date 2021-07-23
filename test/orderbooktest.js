@@ -10,8 +10,13 @@ const chance = new Chance();
 const toBN = web3.utils.toBN;
 const fromUtf8 = web3.utils.fromUtf8;
 
+// Order book side constants
 const BUY = 0;
 const SELL = 1;
+
+// Order types constants
+const MARKET = 0;
+const LIMIT = 1;
  
 contract("OrderBook Test", async accounts => {
     describe("Generic", async () => {
@@ -21,10 +26,10 @@ contract("OrderBook Test", async accounts => {
             let tickerFrom = web3.utils.fromAscii("MATIC");
 
             await truffleAssert.reverts(
-                orderBook.createOrder(BUY, tickerTo, tickerFrom, 0, 0)
+                orderBook.createOrder(BUY, LIMIT, tickerTo, tickerFrom, 0, 0)
             )
             await truffleAssert.reverts(
-                orderBook.createOrder(SELL, tickerTo, tickerFrom, 0, 0)
+                orderBook.createOrder(SELL, LIMIT, tickerTo, tickerFrom, 0, 0)
             )
         });
         it("should not place market orders when order book is empty", async () => {
@@ -33,10 +38,10 @@ contract("OrderBook Test", async accounts => {
             let tickerFrom = web3.utils.fromAscii("MATIC");
 
             await truffleAssert.reverts(
-                orderBook.createOrder(BUY, tickerTo, tickerFrom, 0, 5)
+                orderBook.createOrder(BUY, MARKET, tickerTo, tickerFrom, 0, 5)
             )
             await truffleAssert.reverts(
-                orderBook.createOrder(SELL, tickerTo, tickerFrom, 0, 5)
+                orderBook.createOrder(SELL, MARKET, tickerTo, tickerFrom, 0, 5)
             )
         });
     });
@@ -56,7 +61,7 @@ contract("OrderBook Test", async accounts => {
             let orderCount = 20;
 
             for (let i = 0; i < orderCount; i++) {
-                await orderBook.createOrder(BUY, tickerTo, tickerFrom, chance.integer({min:1, max:100}), 4);
+                await orderBook.createOrder(BUY, LIMIT, tickerTo, tickerFrom, chance.integer({min:1, max:100}), 4);
             }
 
             let orders = await orderBook.getOrderBook(BUY, tickerTo, tickerFrom);
@@ -84,7 +89,7 @@ contract("OrderBook Test", async accounts => {
             let orderCount = 5;
 
             for (let i = 0; i < orderCount; i++) {
-                await orderBook.createOrder(SELL, tickerTo, tickerFrom, chance.integer({min:1, max:100}), 4);
+                await orderBook.createOrder(SELL, LIMIT, tickerTo, tickerFrom, chance.integer({min:1, max:100}), 4);
             }
 
             let orders = await orderBook.getOrderBook(SELL, tickerTo, tickerFrom);
@@ -117,7 +122,7 @@ contract("OrderBook Test", async accounts => {
             let prices = orders.map(x => parseInt(x.price));
             let bestPrice = prices.slice(-1)[0];
 
-            await orderBook.createOrder(SELL, tickerTo, tickerFrom, 0, 4);
+            await orderBook.createOrder(SELL, MARKET, tickerTo, tickerFrom, 0, 4);
 
             orders = await orderBook.getOrderBook(SELL, tickerTo, tickerFrom);
             prices = orders.map(x => parseInt(x.price));
@@ -143,7 +148,7 @@ contract("OrderBook Test", async accounts => {
             let prices = orders.map(x => parseInt(x.price));
             let bestPrice = prices.slice(-1)[0];
 
-            await orderBook.createOrder(BUY, tickerTo, tickerFrom, 0, 4);
+            await orderBook.createOrder(BUY, MARKET, tickerTo, tickerFrom, 0, 4);
 
             orders = await orderBook.getOrderBook(BUY, tickerTo, tickerFrom);
             prices = orders.map(x => parseInt(x.price));

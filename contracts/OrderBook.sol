@@ -10,10 +10,47 @@ contract OrderBook {
         SELL
     }
 
+    /**
+    * @dev OrderType. 
+    * OrderBook contract won't handle IOC, FOK, MOC order types.
+    * Such order types should be implemented in the Dex contract.
+    *
+    * - MARKET
+    *   Filled immediately against resting orders at the current best available price.
+    *   If the order is filled partially the rest of the amount remains in the order book
+    *   and continue being filled at the market price as new limit orders arrive.  
+    *
+    * - LIMIT
+    *   Filled at or better than a specified price. Any quantity that is not filled
+    *   rests on the continuous order book until it is filled or canceled. 
+    *
+    * - LIMIT: Immediate-or-Cancel (IOC)
+    *   Filled immediately at or better than a specified price. 
+    *   Any quantity that is not filled immediately is canceled and 
+    *   does not rest on the continuous order book.
+    *
+    * - LIMIT: Fill-Or-Kill (FOK)
+    *   Filled immediately at or better than a specified price. 
+    *   If the order cannot be filled in full immediately, the entire quantity is canceled. 
+    *   The order does not rest on the continuous order book.
+    *
+    * - LIMIT: Maker-or-Cancel (MOC)
+    *   Rests on the continuous order book at a specified price. 
+    *   If any quantity can be filled immediately, the entire order is canceled.
+    */
+    enum OrderType {
+        MARKET, 
+        LIMIT, 
+        IOC,
+        FOK, 
+        MOC
+    }
+
     struct Order {
         uint256 id;
-        address trader;
         Side side;
+        OrderType orderType;
+        address trader;
         bytes32 ticker1;
         bytes32 ticker2;
         uint256 amount;
@@ -65,6 +102,7 @@ contract OrderBook {
      */
     function createOrder (
         Side side, 
+        OrderType orderType,
         bytes32 tickerTo, 
         bytes32 tickerFrom, 
         uint256 price, 
@@ -73,14 +111,18 @@ contract OrderBook {
     public virtual returns (uint256)
     {
         require(amount > 0, "OrderBook: zero amount");
+        if (orderType != OrderType.MARKET)
+            require(price > 0, "OrderBook: Limit order cannot have zero price");
 
-        if (price == 0)
+        if (orderType == OrderType.MARKET) {
             price = getMarketPrice(side, tickerTo, tickerFrom);
+        }
 
         Order memory order = Order(
             nextOrderId,
-            msg.sender,
             side,
+            orderType,
+            msg.sender,
             tickerTo,
             tickerFrom,
             amount,

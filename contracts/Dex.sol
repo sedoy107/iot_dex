@@ -35,6 +35,21 @@ contract Dex is Wallet, OrderBook {
             uint256 topSellIndex = orderBook[tickerTo][tickerFrom][Side.SELL].length - 1;
             Order storage topSellOrder = orderBook[tickerTo][tickerFrom][Side.SELL][topSellIndex];
 
+            // If top orders are both market orders then bring their price to the max b/w the two of them
+            if (topBuyOrder.orderType == OrderType.MARKET && topSellOrder.orderType == OrderType.MARKET) {
+                uint256 newPrice = Math.max(topBuyOrder.price, topSellOrder.price);
+                topBuyOrder.price = newPrice;
+                topSellOrder.price = newPrice;
+            }
+            // If topBuyOrder is limit and topSellOrder is market, then use the buy order price
+            else if (topBuyOrder.orderType != OrderType.MARKET && topSellOrder.orderType == OrderType.MARKET) {
+                topSellOrder.price = topBuyOrder.price;
+            }
+            // If topSellOrder is limit and topBuyOrder is market, then use the sell order price
+            else if (topBuyOrder.orderType == OrderType.MARKET && topSellOrder.orderType != OrderType.MARKET) {
+                topBuyOrder.price = topSellOrder.price;
+            }
+
             // If buyer's price is less then seller's price then order can't be filled
             if (topBuyOrder.price < topSellOrder.price)
                 break;
@@ -76,6 +91,7 @@ contract Dex is Wallet, OrderBook {
 
     function createOrder (
         Side side, 
+        OrderType orderType,
         bytes32 tickerTo,
         bytes32 tickerFrom, 
         uint256 price, 
@@ -93,7 +109,7 @@ contract Dex is Wallet, OrderBook {
             require(sellersTokensToSwapBalance >= amount, "Dex: Seller doesn't have enough tokes");
         }
 
-        uint256 orderId = super.createOrder(side, tickerTo, tickerFrom, price, amount);
+        uint256 orderId = super.createOrder(side, orderType, tickerTo, tickerFrom, price, amount);
         address trader = orderBook[tickerTo][tickerFrom][side][orderId].trader;
 
         processSwaps(tickerTo, tickerFrom);
