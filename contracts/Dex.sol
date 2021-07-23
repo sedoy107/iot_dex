@@ -35,6 +35,15 @@ contract Dex is Wallet, OrderBook {
             uint256 topSellIndex = orderBook[tickerTo][tickerFrom][Side.SELL].length - 1;
             Order storage topSellOrder = orderBook[tickerTo][tickerFrom][Side.SELL][topSellIndex];
 
+            /* TODO: Investigate the price handling for the case when both top orders are market orders.
+
+            Right now the newPrice is determined as Max of the orders' prices. It might be not correct.
+            Tests should be written to verify if that is indeed erronous logic.
+
+            Similar to how the price for limit orders is identified based on the order of arrival on the
+            excahnge, the newPrice for market orders might need to be implemented the same way.
+            */
+
             // If top orders are both market orders then bring their price to the max b/w the two of them
             if (topBuyOrder.orderType == OrderType.MARKET && topSellOrder.orderType == OrderType.MARKET) {
                 uint256 newPrice = Math.max(topBuyOrder.price, topSellOrder.price);
@@ -54,12 +63,15 @@ contract Dex is Wallet, OrderBook {
             if (topBuyOrder.price < topSellOrder.price)
                 break;
 
-            // Calculate the current order fill amount. 
+            // Calculate current fill price based on the order of arrival to the market
+            uint256 fillPrice = topSellOrder.id < topBuyOrder.id ? topSellOrder.price : topBuyOrder.price;
+
+            // Calculate the current order fill amount
             // Take into account the partly filled amounts by subtracting already filled tokes from the total amount
-            uint256 a = topBuyOrder.amount - topBuyOrder.filled;
-            uint256 b = topSellOrder.amount - topSellOrder.filled;
-            uint256 fillAmountTo = Math.min(a, b);
-            uint256 fillAmountFrom = Math.min(a, b) * topSellOrder.price;
+            uint256 remainingBuyOrderAmountToFill = topBuyOrder.amount - topBuyOrder.filled;
+            uint256 remainingSellOrderAmountToFill = topSellOrder.amount - topSellOrder.filled;
+            uint256 fillAmountTo = Math.min(remainingBuyOrderAmountToFill, remainingSellOrderAmountToFill);
+            uint256 fillAmountFrom = fillAmountTo * fillPrice;
             
             // Increase tickerTo and decrease tickerFrom tokens in buyer's wallet
             balances[topBuyOrder.trader][tickerTo] += fillAmountTo;

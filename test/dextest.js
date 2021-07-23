@@ -99,10 +99,10 @@ contract("Dex", async accounts => {
             let sellOrderBook = await dex.getOrderBook(SELL, linkTicker, polygonTicker)
             assert.equal(sellOrderBook.length, 0)
 
-            await verifyBalances(dex, accounts[0], 45, 125)
+            await verifyBalances(dex, accounts[0], 45, 129)
             await verifyBalances(dex, accounts[1], 52, 90)
-            await verifyBalances(dex, accounts[2], 52, 90)
-            await verifyBalances(dex, accounts[3], 51, 95)
+            await verifyBalances(dex, accounts[2], 52, 88)
+            await verifyBalances(dex, accounts[3], 51, 93)
         })
 
         it("Round 2. Limit Orders", async () => {
@@ -121,10 +121,10 @@ contract("Dex", async accounts => {
             assert.equal(sellOrderBook[0].trader, accounts[1], "Wrong account in the sell order book")
             assert.equal(sellOrderBook[0].filled, 1, "Wrong filled amount")
 
-            await verifyBalances(dex, accounts[0], 47, 112)
+            await verifyBalances(dex, accounts[0], 47, 116)
             await verifyBalances(dex, accounts[1], 51, 97)
-            await verifyBalances(dex, accounts[2], 61, 36)
-            await verifyBalances(dex, accounts[3], 41, 155)
+            await verifyBalances(dex, accounts[2], 61, 34)
+            await verifyBalances(dex, accounts[3], 41, 153)
         })
 
         it("Round 3. Market Orders", async () => {
@@ -142,7 +142,7 @@ contract("Dex", async accounts => {
             assert.equal(sellOrderBook.length, 0)
 
             await verifyBalances(dex, accounts[1], 49, 115)
-            await verifyBalances(dex, accounts[2], 67, 18)
+            await verifyBalances(dex, accounts[2], 67, 16)
             await verifyBalances(dex, accounts[4], 42, 128)
             await verifyBalances(dex, accounts[5], 54, 72)
         })

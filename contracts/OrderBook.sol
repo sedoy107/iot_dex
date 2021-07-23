@@ -114,9 +114,8 @@ contract OrderBook {
         if (orderType != OrderType.MARKET)
             require(price > 0, "OrderBook: Limit order cannot have zero price");
 
-        if (orderType == OrderType.MARKET) {
+        if (orderType == OrderType.MARKET)
             price = getMarketPrice(side, tickerTo, tickerFrom);
-        }
 
         Order memory order = Order(
             nextOrderId,
