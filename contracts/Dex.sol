@@ -35,20 +35,16 @@ contract Dex is Wallet, OrderBook {
             uint256 topSellIndex = orderBook[tickerTo][tickerFrom][Side.SELL].length - 1;
             Order storage topSellOrder = orderBook[tickerTo][tickerFrom][Side.SELL][topSellIndex];
 
-            /* TODO: Investigate the price handling for the case when both top orders are market orders.
-
-            Right now the newPrice is determined as Max of the orders' prices. It might be not correct.
-            Tests should be written to verify if that is indeed erronous logic.
-
-            Similar to how the price for limit orders is identified based on the order of arrival on the
-            excahnge, the newPrice for market orders might need to be implemented the same way.
+            /* 
+            If the top orders are both market orders then their price will be equal as the previous market
+            order's price will be the current market price and will propogate the the new market order
+            that is currently being placed on the opposite side of the order book.
             */
-
-            // If top orders are both market orders then bring their price to the max b/w the two of them
             if (topBuyOrder.orderType == OrderType.MARKET && topSellOrder.orderType == OrderType.MARKET) {
-                uint256 newPrice = Math.max(topBuyOrder.price, topSellOrder.price);
-                topBuyOrder.price = newPrice;
-                topSellOrder.price = newPrice;
+                assert(topBuyOrder.price == topSellOrder.price);
+                // uint256 newPrice = Math.max(topBuyOrder.price, topSellOrder.price);
+                // topBuyOrder.price = newPrice;
+                // topSellOrder.price = newPrice;
             }
             // If topBuyOrder is limit and topSellOrder is market, then use the buy order price
             else if (topBuyOrder.orderType != OrderType.MARKET && topSellOrder.orderType == OrderType.MARKET) {
