@@ -11,3 +11,7 @@ contract Link is ERC20 ("Chainlink", "LINK") {
 contract Polygon is ERC20 ("Polygon", "MATIC") {
     constructor () { _mint(msg.sender, 1000); }
 }
+
+contract WrappedBitcoin is ERC20 ("Wrapped Bitcoin", "WBTC") {
+    constructor () { _mint(msg.sender, 1000); }
+}
