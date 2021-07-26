@@ -19,12 +19,18 @@ const MARKET = 0;
 const LIMIT = 1;
  
 contract("OrderBook Test", async accounts => {
-    describe("Generic", async () => {
-        it("should correctly handle orders with amount == 0", async () => {
-            let orderBook = await OrderBook.deployed();
-            let tickerTo = web3.utils.fromAscii("LINK");
-            let tickerFrom = web3.utils.fromAscii("MATIC");
 
+    let orderBook
+
+    const tickerTo = web3.utils.fromAscii("LINK");
+    const tickerFrom = web3.utils.fromAscii("MATIC");
+
+    before("Setup OrderBook contract", async () => {
+        orderBook = await OrderBook.deployed();
+    })
+
+    describe("Error conditions", async () => {
+        it("should revert when try to place order with amount == 0", async () => {
             await truffleAssert.reverts(
                 orderBook.createOrder(BUY, LIMIT, tickerTo, tickerFrom, 0, 0)
             )
@@ -33,10 +39,6 @@ contract("OrderBook Test", async accounts => {
             )
         });
         it("should not place market orders when order book is empty", async () => {
-            let orderBook = await OrderBook.deployed();
-            let tickerTo = web3.utils.fromAscii("LINK");
-            let tickerFrom = web3.utils.fromAscii("MATIC");
-
             await truffleAssert.reverts(
                 orderBook.createOrder(BUY, MARKET, tickerTo, tickerFrom, 0, 5)
             )
@@ -44,20 +46,27 @@ contract("OrderBook Test", async accounts => {
                 orderBook.createOrder(SELL, MARKET, tickerTo, tickerFrom, 0, 5)
             )
         });
+        it("should revert when try to get market price when market is not available", async () => {
+            await truffleAssert.reverts(
+                orderBook.getMarketPrice(BUY, tickerTo, tickerFrom)
+            )
+            await truffleAssert.reverts(
+                orderBook.getMarketPrice(SELL, tickerTo, tickerFrom)
+            )
+        });
     });
     describe("Limit Orders", async () => {
         it("should place BUY orders sorted from lowest [0] to highest [length - 1]", async () => {
-            // THE BUY order with the lowest price must be at the top of the SELL order book
             /**
+             * THE BUY order with the lowest price must be at the top of the SELL order book
+             *
              * | Price | Amount |
              * |   2   |    4   | [0]
              * |   5   |    8   | [1]
              * |   8   |   12   | [2]
              * |  10   |   13   | [3]
             */
-            let orderBook = await OrderBook.deployed();
-            let tickerTo = web3.utils.fromAscii("LINK");
-            let tickerFrom = web3.utils.fromAscii("MATIC");
+
             let orderCount = 20;
 
             for (let i = 0; i < orderCount; i++) {
@@ -75,17 +84,16 @@ contract("OrderBook Test", async accounts => {
             }
         });
         it("should place SELL orders sorted from highest [0] to lowest [length - 1]", async () => {
-            // The SELL order with the highest price must be at the top of the BUY order book
             /**
+             * The SELL order with the highest price must be at the top of the BUY order book
+             *
              * | Price | Amount |
              * |   2   |   10   | [3]
              * |   5   |    8   | [2]
              * |   8   |    6   | [1]
              * |  10   |    5   | [0]
              */
-            let orderBook = await OrderBook.deployed();
-            let tickerTo = web3.utils.fromAscii("LINK");
-            let tickerFrom = web3.utils.fromAscii("MATIC");
+
             let orderCount = 5;
 
             for (let i = 0; i < orderCount; i++) {
@@ -105,17 +113,6 @@ contract("OrderBook Test", async accounts => {
     });
     describe("Market Orders", async () => {
         it("should place SELL orders at the top of the order book [length - 1]", async () => {
-            // The SELL order with the highest price must be at the top of the BUY order book
-            /**
-             * | Price | Amount |
-             * |   2   |   10   | [3] <---- bestPrice is at the top
-             * |   5   |    8   | [2]
-             * |   8   |    6   | [1]
-             * |  10   |    5   | [0]
-             */
-            let orderBook = await OrderBook.deployed();
-            let tickerTo = web3.utils.fromAscii("LINK");
-            let tickerFrom = web3.utils.fromAscii("MATIC");
 
             // Retrieve bestPrice
             let orders = await orderBook.getOrderBook(SELL, tickerTo, tickerFrom);
@@ -131,18 +128,7 @@ contract("OrderBook Test", async accounts => {
             assert.equal(prices.slice(-1)[0], prices.slice(-2)[0], "The two top SELL orders must have the same price")
         });
         it("should place BUY orders at the top of the order book [length - 1]", async () => {
-            // THE BUY order with the lowest price must be at the top of the SELL order book
-            /**
-             * | Price | Amount |
-             * |   2   |    4   | [0] <---- bestPrice at the top
-             * |   5   |    8   | [1]
-             * |   8   |   12   | [2]
-             * |  10   |   13   | [3]
-            */
-            let orderBook = await OrderBook.deployed();
-            let tickerTo = web3.utils.fromAscii("LINK");
-            let tickerFrom = web3.utils.fromAscii("MATIC");
-
+            
             // Retrieve bestPrice
             let orders = await orderBook.getOrderBook(BUY, tickerTo, tickerFrom);
             let prices = orders.map(x => parseInt(x.price));
