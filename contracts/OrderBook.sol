@@ -114,8 +114,11 @@ contract OrderBook {
         if (orderType != OrderType.MARKET)
             require(price > 0, "OrderBook: Limit order cannot have zero price");
 
-        if (orderType == OrderType.MARKET)
-            price = getMarketPrice(side, tickerTo, tickerFrom);
+        // The market price is determing based on the opposite side of the order book
+        if (orderType == OrderType.MARKET) {
+            Side oppositeSide = side == Side.BUY ? Side.SELL : Side.BUY;
+            price = getMarketPrice(oppositeSide, tickerTo, tickerFrom);
+        }
 
         Order memory order = Order(
             nextOrderId,
