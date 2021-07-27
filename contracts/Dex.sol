@@ -14,12 +14,43 @@ contract Dex is Wallet, OrderBook {
     event OrderCreated(
         address indexed trader,
         Side side, 
+        OrderType orderType,
         bytes32 tickerTo, 
         bytes32 tickerFrom, 
         uint256 price, 
         uint256 amount
     );
 
+    event OrderRemoved(
+        address indexed trader,
+        Side side, 
+        OrderType orderType,
+        bytes32 tickerTo, 
+        bytes32 tickerFrom, 
+        uint256 price,
+        uint256 filled,
+        uint256 amount
+    );
+
+    function popTopOrder(
+        Side side,
+        bytes32 tickerTo, 
+        bytes32 tickerFrom
+    ) 
+    private {
+        uint256 topIndex = orderBook[tickerTo][tickerFrom][side].length - 1;
+        Order storage order = orderBook[tickerTo][tickerFrom][side][topIndex];
+        
+        emit OrderRemoved(order.trader, side, order.orderType, tickerTo, tickerFrom, order.price, order.filled, order.amount);
+        
+        delete orderBook[tickerTo][tickerFrom][side][topIndex];
+        
+        orderBook[tickerTo][tickerFrom][side].pop();
+    }
+
+    /**
+     * @dev Matches the orders on the order book based on their price and type
+     */
     function processSwaps(bytes32 tickerTo, bytes32 tickerFrom) private {
         // BUY and SELL `orderBook`s must both have entries
         while (
@@ -42,9 +73,6 @@ contract Dex is Wallet, OrderBook {
             */
             if (topBuyOrder.orderType == OrderType.MARKET && topSellOrder.orderType == OrderType.MARKET) {
                 assert(topBuyOrder.price == topSellOrder.price);
-                // uint256 newPrice = Math.max(topBuyOrder.price, topSellOrder.price);
-                // topBuyOrder.price = newPrice;
-                // topSellOrder.price = newPrice;
             }
             // If topBuyOrder is limit and topSellOrder is market, then use the buy order price
             else if (topBuyOrder.orderType != OrderType.MARKET && topSellOrder.orderType == OrderType.MARKET) {
@@ -59,6 +87,22 @@ contract Dex is Wallet, OrderBook {
             if (topBuyOrder.price < topSellOrder.price)
                 break;
 
+            /* 
+            For the most recent order that comes to processing, check if it is MOC order. If so
+            then pop at this point it can fulfill the opposite side of orders and hence it won't 
+            rest on the order book. It should be cancelled.
+
+            Only one of the top orders can be cancelled as only one will be the most recent.
+            */
+            if (topBuyOrder.id == nextOrderId - 1 && topBuyOrder.orderType == OrderType.MOC) {
+                popTopOrder(Side.BUY, tickerTo, tickerFrom);
+                break;
+            }
+            if (topBuyOrder.id == nextOrderId - 1 && topSellOrder.orderType == OrderType.MOC) {
+                popTopOrder(Side.SELL, tickerTo, tickerFrom);
+                break;
+            }
+
             // Calculate current fill price based on the order of arrival to the market
             uint256 fillPrice = topSellOrder.id < topBuyOrder.id ? topSellOrder.price : topBuyOrder.price;
 
@@ -68,6 +112,28 @@ contract Dex is Wallet, OrderBook {
             uint256 remainingSellOrderAmountToFill = topSellOrder.amount - topSellOrder.filled;
             uint256 fillAmountTo = Math.min(remainingBuyOrderAmountToFill, remainingSellOrderAmountToFill);
             uint256 fillAmountFrom = fillAmountTo * fillPrice;
+
+            /* 
+            If FOK order then check if the fill amount == the order amount. 
+            If so then remove the order.
+
+            Both of the top orders can be FOK orders, but only one of them can
+            be removed due to the projected partial fulfillment. 
+            
+            In case when both orders are the FOK orders, the one with lesser amount
+            will remain on the order book.
+            */
+            bool fokBreak = false;
+            if (topBuyOrder.orderType == OrderType.FOK && topBuyOrder.amount != fillAmountTo){
+                popTopOrder(Side.BUY, tickerTo, tickerFrom);
+                fokBreak = true;
+            }
+            if (topSellOrder.orderType == OrderType.FOK && topSellOrder.amount != fillAmountTo){
+                popTopOrder(Side.SELL, tickerTo, tickerFrom);
+                fokBreak = true;
+            }
+            if (fokBreak)
+                break;
             
             // Increase tickerTo and decrease tickerFrom tokens in buyer's wallet
             balances[topBuyOrder.trader][tickerTo] += fillAmountTo;
@@ -86,17 +152,34 @@ contract Dex is Wallet, OrderBook {
 
             // If order.filled == amount, then the order can be popped
             if (topBuyOrder.filled == topBuyOrder.amount) {
-                delete orderBook[tickerTo][tickerFrom][Side.BUY][topBuyIndex];
-                orderBook[tickerTo][tickerFrom][Side.BUY].pop();
+                popTopOrder(Side.BUY, tickerTo, tickerFrom);
+            }
+            // If IOC order is partially filled then still pop the order from the order book
+            else if(topBuyOrder.orderType == OrderType.IOC && topBuyOrder.filled > 0){
+                popTopOrder(Side.BUY, tickerTo, tickerFrom);
             }
 
             if (topSellOrder.filled == topSellOrder.amount) {
-                delete orderBook[tickerTo][tickerFrom][Side.SELL][topSellIndex];
-                orderBook[tickerTo][tickerFrom][Side.SELL].pop();
+                popTopOrder(Side.SELL, tickerTo, tickerFrom);
+            }
+            // If IOC order is partially filled then still pop the order from the order book
+            else if(topSellOrder.orderType == OrderType.IOC && topSellOrder.filled > 0){
+                popTopOrder(Side.SELL, tickerTo, tickerFrom);
             }
         }
     }
 
+    /**
+     * @dev creates an order to swap two tokens:
+     *  `amount` of tokens `tickerTo` are to be swapped for tokens `tickerFrom` @ `price`
+     * 
+     *  `orderType` defines the type of order to place
+     *
+     *  For market orders the price doesn't matter and can be zero.
+     *  Market order will not be created if the opposite side of the order book is empty.
+     *
+     *  Overrides `createOrder` function from OrderBook.sol
+     */
     function createOrder (
         Side side, 
         OrderType orderType,
@@ -122,7 +205,7 @@ contract Dex is Wallet, OrderBook {
 
         processSwaps(tickerTo, tickerFrom);
 
-        emit OrderCreated(trader, side, tickerTo, tickerFrom, price, amount);
+        emit OrderCreated(trader, side, orderType, tickerTo, tickerFrom, price, amount);
 
         return orderId;
     }
