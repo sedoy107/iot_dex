@@ -48,6 +48,7 @@ contract OrderBook {
 
     struct Order {
         uint256 id;
+        bool isActive;
         Side side;
         OrderType orderType;
         address trader;
@@ -101,6 +102,8 @@ contract OrderBook {
      *
      *  For market orders the price doesn't matter and can be zero.
      *  Market order will not be created if the opposite side of the order book is empty.
+     *
+     * Algorithmic cost: O(n)
      */
     function createOrder (
         Side side, 
@@ -124,6 +127,7 @@ contract OrderBook {
 
         Order memory order = Order(
             nextOrderId,
+            true,
             side,
             orderType,
             msg.sender,
@@ -176,5 +180,22 @@ contract OrderBook {
         }
 
         return len - 1;
+    }
+
+    /**
+     * @dev Cancel an order by setting isActive flag to false
+     *
+     * Algorithmic cost: O(n)
+     */
+    function cancelOrder (
+        uint256 orderId,
+        Side side, 
+        bytes32 tickerTo, 
+        bytes32 tickerFrom
+    ) public  
+    {
+        for (uint256 i = 0; i < orderBook[tickerTo][tickerFrom][side].length; i++)
+            if (orderBook[tickerTo][tickerFrom][side][i].id == orderId)
+                orderBook[tickerTo][tickerFrom][side][i].isActive = false;
     }
 }
