@@ -97,8 +97,10 @@ contract OrderBook {
      * @dev creates an order to swap two tokens:
      *  `amount` of tokens `tickerTo` are to be swapped for tokens `tickerFrom` @ `price`
      *
-     *  If `price` == 0 then it is  a market order.
-     *  Market order will not be created if the trading pair order book doesn't have orders.
+     *  `orderType` defines the type of order to place
+     *
+     *  For market orders the price doesn't matter and can be zero.
+     *  Market order will not be created if the opposite side of the order book is empty.
      */
     function createOrder (
         Side side, 
