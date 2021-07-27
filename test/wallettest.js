@@ -10,12 +10,23 @@ const toBN = web3.utils.toBN;
 const fromUtf8 = web3.utils.fromUtf8;
  
 contract("Wallet Test", async accounts => {
+
+    let wallet
+    let link
+    let symbol
+    let ticker
+    
+    const ethTicker = fromUtf8("ETH");
+
+    before("Setup contracts", async () => {
+        wallet = await Wallet.deployed();
+        link = await Link.deployed();
+        symbol = await link.symbol();
+        ticker = fromUtf8(symbol);
+    })
+
     describe("Add ERC20 to wallet", async () => {
         it("should only be possible for owner to add token", async () => {
-            let wallet = await Wallet.deployed();
-            let link = await Link.deployed();
-            let symbol = await link.symbol();
-            let ticker = fromUtf8(symbol);
             await truffleAssert.reverts (
                 wallet.addToken(ticker, link.address, {from: accounts[1]})
             );
@@ -26,9 +37,6 @@ contract("Wallet Test", async accounts => {
     });
     describe("ETHER deposit / withdrawal", async () => {
         it("should handle deposits correctly", async () => {
-            let wallet = await Wallet.deployed();
-            let ethTicker = fromUtf8("ETH");
-
             let balances = {
                 1 : 10 ** 5,
                 2 : 10 ** 4,
@@ -46,9 +54,6 @@ contract("Wallet Test", async accounts => {
             }
         });
         it("should handle withdrawals correctly", async () => {
-            let wallet = await Wallet.deployed();
-            let ethTicker = fromUtf8("ETH");
-
             await truffleAssert.reverts ( wallet.withdraw(100, {from: accounts[4]}) );
 
             let balances = {
@@ -71,10 +76,6 @@ contract("Wallet Test", async accounts => {
     });
     describe("ERC20 deposit / withdrawal", async () => {
         it("should handle deposits correctly", async () => {
-            let wallet = await Wallet.deployed();
-            let link = await Link.deployed();
-            let symbol = await link.symbol();
-            let ticker = fromUtf8(symbol);
             await wallet.addToken(ticker, link.address, {from: accounts[0]})
             await link.approve(await wallet.address, 500);
             await wallet.deposit(100, ticker);
@@ -88,19 +89,11 @@ contract("Wallet Test", async accounts => {
             );
         }); 
         it("should handle invalid withdrawals correctly", async () => {
-            let wallet = await Wallet.deployed();
-            let link = await Link.deployed();
-            let symbol = await link.symbol();
-            let ticker = fromUtf8(symbol);
             await truffleAssert.reverts (
                 wallet.withdraw(500, ticker)
             );
         });
         it("should handle valid withdrawals correctly", async () => {
-            let wallet = await Wallet.deployed();
-            let link = await Link.deployed();
-            let symbol = await link.symbol();
-            let ticker = fromUtf8(symbol);
             await truffleAssert.passes (
                 wallet.withdraw(100, ticker)
             );
