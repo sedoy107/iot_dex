@@ -56,6 +56,33 @@ contract("OrderBook: Error Conditions", async accounts => {
         )
     })
 })
+contract("OrderBook: Cancel Orders", async accounts => {
+
+    let orderBook
+
+    before("Fill order book with limit orders that cannot be matched", async () => {
+
+        orderBook = await OrderBook.deployed()
+
+        await orderBook.createOrder(SELL, LIMIT, tickerTo, tickerFrom, 10, 5) // sell 5@10
+        await orderBook.createOrder(SELL, LIMIT, tickerTo, tickerFrom, 9, 6) // sell 6@9 <- topSellOrder
+        await orderBook.createOrder(SELL, LIMIT, tickerTo, tickerFrom, 11, 4) // sell 4@11
+        await orderBook.createOrder(BUY, LIMIT, tickerTo, tickerFrom, 7, 6) // buy 6@7 <- topBuyOrder
+        await orderBook.createOrder(BUY, LIMIT, tickerTo, tickerFrom, 6, 8) // buy 8@6
+        await orderBook.createOrder(BUY, LIMIT, tickerTo, tickerFrom, 5, 10) // buy 10@5
+    })
+
+    it("should cancel order if it exists", async () => {
+        await orderBook.cancelOrder(0, SELL, tickerTo, tickerFrom)
+        let order = await orderBook.getOrder(0, SELL, tickerTo, tickerFrom)
+        assert.equal(order.isActive, false, "Must be true")
+    })
+    it("should not cancel order if it doesn't exist", async () => {
+        await truffleAssertions.reverts(
+            orderBook.cancelOrder(6, SELL, tickerTo, tickerFrom)
+        )
+    })
+})
 
 contract("OrderBook: Market Orders", async accounts => {
 
