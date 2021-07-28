@@ -12,6 +12,7 @@ contract Dex is Wallet, OrderBook {
     using Math for uint256;
 
     event OrderCreated(
+        uint256 id,
         address indexed trader,
         Side side, 
         OrderType orderType,
@@ -22,6 +23,7 @@ contract Dex is Wallet, OrderBook {
     );
 
     event OrderRemoved(
+        uint256 id,
         address indexed trader,
         Side side, 
         OrderType orderType,
@@ -41,7 +43,17 @@ contract Dex is Wallet, OrderBook {
         uint256 topIndex = orderBook[tickerTo][tickerFrom][side].length - 1;
         Order storage order = orderBook[tickerTo][tickerFrom][side][topIndex];
         
-        emit OrderRemoved(order.trader, side, order.orderType, tickerTo, tickerFrom, order.price, order.filled, order.amount);
+        emit OrderRemoved(
+            order.id, 
+            order.trader, 
+            side, 
+            order.orderType, 
+            tickerTo, 
+            tickerFrom, 
+            order.price, 
+            order.filled, 
+            order.amount
+        );
         
         delete orderBook[tickerTo][tickerFrom][side][topIndex];
         
@@ -66,6 +78,17 @@ contract Dex is Wallet, OrderBook {
             uint256 topSellIndex = orderBook[tickerTo][tickerFrom][Side.SELL].length - 1;
             Order storage topSellOrder = orderBook[tickerTo][tickerFrom][Side.SELL][topSellIndex];
 
+            /*
+            Check if the orders aren't cancelled. If any of the orders is cancelled then pop the order
+            and continue looking.
+            */
+            if (!topBuyOrder.isActive)
+                popTopOrder(Side.BUY, tickerTo, tickerFrom);
+            if (!topSellOrder.isActive)
+                popTopOrder(Side.SELL, tickerTo, tickerFrom);
+            if (!topSellOrder.isActive || !topBuyOrder.isActive)
+                continue;
+            
             /* 
             If the top orders are both market orders then their price will be equal as the previous market
             order's price will be the current market price and will propogate the the new market order
@@ -96,11 +119,11 @@ contract Dex is Wallet, OrderBook {
             */
             if (topBuyOrder.id == nextOrderId - 1 && topBuyOrder.orderType == OrderType.MOC) {
                 popTopOrder(Side.BUY, tickerTo, tickerFrom);
-                break;
+                continue;
             }
             if (topBuyOrder.id == nextOrderId - 1 && topSellOrder.orderType == OrderType.MOC) {
                 popTopOrder(Side.SELL, tickerTo, tickerFrom);
-                break;
+                continue;
             }
 
             // Calculate current fill price based on the order of arrival to the market
@@ -133,7 +156,7 @@ contract Dex is Wallet, OrderBook {
                 fokBreak = true;
             }
             if (fokBreak)
-                break;
+                continue;
             
             // Increase tickerTo and decrease tickerFrom tokens in buyer's wallet
             balances[topBuyOrder.trader][tickerTo] += fillAmountTo;
@@ -201,11 +224,19 @@ contract Dex is Wallet, OrderBook {
         }
 
         uint256 orderId = super.createOrder(side, orderType, tickerTo, tickerFrom, price, amount);
-        address trader = orderBook[tickerTo][tickerFrom][side][orderId].trader;
+
+        emit OrderCreated(
+            orderId, 
+            msg.sender, 
+            side, 
+            orderType, 
+            tickerTo, 
+            tickerFrom, 
+            price, 
+            amount
+        );
 
         processSwaps(tickerTo, tickerFrom);
-
-        emit OrderCreated(trader, side, orderType, tickerTo, tickerFrom, price, amount);
 
         return orderId;
     }
