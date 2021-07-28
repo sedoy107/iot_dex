@@ -208,7 +208,7 @@ should fill a new limit order that came at a higher price", async () => {
         // Token declarations
         let wbtc
         let wbtcTicker
-        const etherTicker =  fromUtf8("ETH");
+        const etherTicker = fromUtf8("ETH");
         
         // Number of accounts used for the test
         const accountCount = 6
