@@ -25,13 +25,14 @@ contract Dex is Wallet, OrderBook {
     event OrderRemoved(
         uint256 id,
         address indexed trader,
-        Side side, 
-        OrderType orderType,
-        bytes32 tickerTo, 
-        bytes32 tickerFrom, 
+        uint256 filled
+    );
+
+    event OrderFilled(
+        uint256 id,
+        address indexed trader,
         uint256 price,
-        uint256 filled,
-        uint256 amount
+        uint256 filled
     );
 
     function popTopOrder(
@@ -46,13 +47,7 @@ contract Dex is Wallet, OrderBook {
         emit OrderRemoved(
             order.id, 
             order.trader, 
-            side, 
-            order.orderType, 
-            tickerTo, 
-            tickerFrom, 
-            order.price, 
-            order.filled, 
-            order.amount
+            order.filled
         );
         
         delete orderBook[tickerTo][tickerFrom][side][topIndex];
@@ -173,6 +168,21 @@ contract Dex is Wallet, OrderBook {
             assert(topBuyOrder.filled <= topBuyOrder.amount);
             assert(topSellOrder.filled <= topSellOrder.amount);
 
+            // Emit OrderFilled event for sell and buy orders
+            emit OrderFilled(
+                topBuyOrder.id,
+                topBuyOrder.trader,
+                fillPrice,
+                fillAmountTo
+            );
+
+            emit OrderFilled(
+                topSellOrder.id,
+                topSellOrder.trader,
+                fillPrice,
+                fillAmountTo
+            );
+
             // If order.filled == amount, then the order can be popped
             if (topBuyOrder.filled == topBuyOrder.amount) {
                 popTopOrder(Side.BUY, tickerTo, tickerFrom);
@@ -232,7 +242,7 @@ contract Dex is Wallet, OrderBook {
             orderType, 
             tickerTo, 
             tickerFrom, 
-            price, 
+            price, // for market orders price can be anything.
             amount
         );
 
