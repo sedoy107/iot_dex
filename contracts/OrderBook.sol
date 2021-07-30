@@ -74,6 +74,7 @@ contract OrderBook {
     ) 
     public 
     view 
+    virtual
     returns(Order[] memory)
     {
         return orderBook[tickerTo][tickerFrom][side];
@@ -86,6 +87,7 @@ contract OrderBook {
     ) 
     public 
     view 
+    virtual
     returns (uint256) 
     {
         require(orderBook[tickerTo][tickerFrom][side].length > 0, "Market is not available");
@@ -190,7 +192,11 @@ contract OrderBook {
         Side side, 
         bytes32 tickerTo, 
         bytes32 tickerFrom
-    ) public view returns (Order memory order)
+    ) 
+    public 
+    view 
+    virtual
+    returns (Order memory order)
     {
         require(orderId < nextOrderId, "Order doesn't exist");
         for (uint256 i = 0; i < orderBook[tickerTo][tickerFrom][side].length; i++)
@@ -211,7 +217,7 @@ contract OrderBook {
         Side side, 
         bytes32 tickerTo, 
         bytes32 tickerFrom
-    ) public
+    ) public virtual
     {
         require(orderId < nextOrderId, "Order doesn't exist");
         for (uint256 i = 0; i < orderBook[tickerTo][tickerFrom][side].length; i++) {

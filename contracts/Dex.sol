@@ -35,6 +35,21 @@ contract Dex is Wallet, OrderBook {
         uint256 filled
     );
 
+    mapping(bytes32 => mapping (bytes32 => bool)) pairs;
+
+    modifier pairExists (bytes32 tickerTo, bytes32 tickerFrom) {
+        require (pairs[tickerTo][tickerFrom], "Dex: pair doesn't exist");
+        _;
+    }
+
+    function addPair(bytes32 ticketTo, bytes32 tickerFrom) public onlyOwner {
+        pairs[ticketTo][tickerFrom] = true;
+    }
+
+    function removePair(bytes32 ticketTo, bytes32 tickerFrom) public onlyOwner {
+        pairs[ticketTo][tickerFrom] = false;
+    }
+
     function popTopOrder(
         Side side,
         bytes32 tickerTo, 
@@ -221,7 +236,10 @@ contract Dex is Wallet, OrderBook {
         uint256 price, 
         uint256 amount
     )
-    public virtual override returns (uint256) {
+    public 
+    virtual override 
+    pairExists(tickerTo, tickerFrom)
+    returns (uint256) {
         // Buyer can't swap for tokens he doesn't have
         if (side == Side.BUY) {
             uint256 buyersTokensToSwapBalance = balances[msg.sender][tickerFrom];
@@ -250,5 +268,59 @@ contract Dex is Wallet, OrderBook {
 
         return orderId;
     }
+    function cancelOrder (
+        uint256 orderId,
+        Side side, 
+        bytes32 tickerTo, 
+        bytes32 tickerFrom
+    ) 
+    public 
+    virtual override
+    pairExists(tickerTo, tickerFrom)
+    {
+        super.cancelOrder(orderId, side, tickerTo, tickerFrom);
+    }
 
+    function getOrder (
+        uint256 orderId,
+        Side side, 
+        bytes32 tickerTo, 
+        bytes32 tickerFrom
+    ) 
+    public 
+    view 
+    virtual override
+    pairExists(tickerTo, tickerFrom)
+    returns (Order memory order)
+    {
+        return super.getOrder(orderId, side, tickerTo, tickerFrom);
+    }
+
+    function getOrderBook(
+        Side side, 
+        bytes32 tickerTo, 
+        bytes32 tickerFrom
+    ) 
+    public 
+    view 
+    virtual override
+    pairExists(tickerTo, tickerFrom)
+    returns(Order[] memory)
+    {
+        return super.getOrderBook(side, tickerTo, tickerFrom);
+    }
+
+    function getMarketPrice (
+        Side side, 
+        bytes32 tickerTo, 
+        bytes32 tickerFrom
+    ) 
+    public 
+    view 
+    virtual override
+    pairExists(tickerTo, tickerFrom)
+    returns (uint256) 
+    {
+        return super.getMarketPrice(side, tickerTo, tickerFrom);
+    }
 }

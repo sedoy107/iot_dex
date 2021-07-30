@@ -73,6 +73,9 @@ contract("Dex", async accounts => {
             // Dex: add tokens
             await dex.addToken(linkTicker, link.address)
             await dex.addToken(polygonTicker, polygon.address)
+
+            // Add pair
+            await dex.addPair(linkTicker, polygonTicker);
     
             for (let i = 0; i < accountCount; i++) {
                 // Send some tokens to accounts
@@ -230,6 +233,9 @@ should fill a new limit order that came at a higher price", async () => {
     
             // Dex: add tokens
             await dex.addToken(wbtcTicker, wbtc.address)
+
+            // Add pair
+            await dex.addPair(wbtcTicker, etherTicker);
     
             for (let i = 0; i < accountCount; i++) {
                 // Send some tokens to other accounts 

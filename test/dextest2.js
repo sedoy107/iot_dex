@@ -114,6 +114,9 @@ contract("Dex", async accounts => {
             // Dex: add tokens
             await dex.addToken(linkTicker, link.address)
             await dex.addToken(polygonTicker, polygon.address)
+
+            // Add pair
+            await dex.addPair(linkTicker, polygonTicker);
     
             for (let i = 0; i < accountCount; i++) {
                 // Send some tokens to accounts
@@ -304,7 +307,7 @@ contract("Dex", async accounts => {
             verifyOrderRemoved(tx, 19, accounts[5], 1)
         })
     })
-    describe.only("Ether Swaps", async () => {
+    describe.skip("Ether Swaps", async () => {
 
         // Token declarations
         let wbtc
@@ -331,6 +334,9 @@ contract("Dex", async accounts => {
     
             // Dex: add tokens
             await dex.addToken(wbtcTicker, wbtc.address)
+            
+            // Add pair
+            await dex.addPair(wbtcTicker, etherTicker);
     
             for (let i = 0; i < accountCount; i++) {
                 // Send some tokens to other accounts 
