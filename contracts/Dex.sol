@@ -35,6 +35,16 @@ contract Dex is Wallet, OrderBook {
         uint256 filled
     );
 
+    event PairAdded(
+        bytes32 tickerTo,
+        bytes32 tickerFrom
+    );
+
+    event PairRemoved(
+        bytes32 tickerTo,
+        bytes32 tickerFrom
+    );
+
     mapping(bytes32 => mapping (bytes32 => bool)) pairs;
 
     modifier pairExists (bytes32 tickerTo, bytes32 tickerFrom) {
@@ -42,12 +52,14 @@ contract Dex is Wallet, OrderBook {
         _;
     }
 
-    function addPair(bytes32 ticketTo, bytes32 tickerFrom) public onlyOwner {
-        pairs[ticketTo][tickerFrom] = true;
+    function addPair(bytes32 tickerTo, bytes32 tickerFrom) public onlyOwner {
+        pairs[tickerTo][tickerFrom] = true;
+        emit PairAdded(tickerTo, tickerFrom);
     }
 
-    function removePair(bytes32 ticketTo, bytes32 tickerFrom) public onlyOwner {
-        pairs[ticketTo][tickerFrom] = false;
+    function removePair(bytes32 tickerTo, bytes32 tickerFrom) public onlyOwner {
+        pairs[tickerTo][tickerFrom] = false;
+        emit PairRemoved(tickerTo, tickerFrom);
     }
 
     function popTopOrder(
