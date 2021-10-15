@@ -39,6 +39,13 @@ contract Wallet is Ownable {
         tokenList.push(ticker);
     }
 
+    /** 
+    * @dev Get token list
+    * 
+    */
+    function getTokenList() public view returns (bytes32[] memory){
+        return tokenList;
+    }
     
     /** 
     * @dev Deposit ether to the wallet for `msg.sender`'s account
