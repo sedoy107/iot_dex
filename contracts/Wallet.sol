@@ -17,7 +17,7 @@ contract Wallet is Ownable {
         address tokenAddress;
     }
     mapping (bytes32 => Token) public tokenMapping;
-    bytes32[] public tokenList;
+    Token[] public tokenList;
 
     mapping (address => mapping(bytes32 => uint256)) public balances;
 
@@ -36,14 +36,14 @@ contract Wallet is Ownable {
     */
     function addToken(bytes32 ticker, address tokenAddress) external onlyOwner {
         tokenMapping[ticker] = Token(ticker, tokenAddress);
-        tokenList.push(ticker);
+        tokenList.push(tokenMapping[ticker]);
     }
 
     /** 
     * @dev Get token list
     * 
     */
-    function getTokenList() public view returns (bytes32[] memory){
+    function getTokenList() public view returns (Token[] memory){
         return tokenList;
     }
     

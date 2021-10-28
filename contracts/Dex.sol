@@ -35,7 +35,7 @@ contract Dex is Wallet, OrderBook {
         uint256 filled
     );
 
-    mapping(bytes32 => mapping (bytes32 => bool)) pairs;
+    mapping(bytes32 => mapping (bytes32 => bool)) public pairs;
 
     modifier pairExists (bytes32 tickerTo, bytes32 tickerFrom) {
         require (pairs[tickerTo][tickerFrom], "Dex: pair doesn't exist");
