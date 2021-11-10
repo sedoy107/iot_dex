@@ -211,6 +211,9 @@ contract OrderBook {
      *
      * Returns true if the order was cancelled. Returns false if the order
      * was not found or had already been cancelled
+     *
+     * Reverts is the msg.sender doesn't match `trader` field.
+     *
      */
     function cancelOrder (
         uint256 orderId,
@@ -222,6 +225,7 @@ contract OrderBook {
         require(orderId < nextOrderId, "Order doesn't exist");
         for (uint256 i = 0; i < orderBook[tickerTo][tickerFrom][side].length; i++) {
             if (orderBook[tickerTo][tickerFrom][side][i].id == orderId) {
+                require(orderBook[tickerTo][tickerFrom][side][i].trader == msg.sender, "Must be the order owner");
                 orderBook[tickerTo][tickerFrom][side][i].isActive = false;
                 break;
             }
