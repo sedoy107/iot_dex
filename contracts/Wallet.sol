@@ -6,23 +6,36 @@ import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../node_modules/@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
 
+interface IERC20_Custom {
+    function decimals() external view returns (uint8);
+}
+
 contract Wallet is Ownable {
 
     using SafeMath for uint256;
 
     bytes32 constant ethTicker = 0x4554480000000000000000000000000000000000000000000000000000000000;
+    uint8 constant ethDecimals = 18;
+    address constant ethAddress = 0x0000000000000000000000000000000000000000;
 
     struct Token {
         bytes32 ticker;
         address tokenAddress;
+        uint8 decimals;
     }
+
     mapping (bytes32 => Token) public tokenMapping;
     Token[] public tokenList;
 
     mapping (address => mapping(bytes32 => uint256)) public balances;
 
+    constructor() {
+        tokenMapping[ethTicker] = Token(ethTicker, ethAddress, ethDecimals);
+        tokenList.push(tokenMapping[ethTicker]);
+    }
+
     modifier tokenExists(bytes32 ticker) {
-        require(tokenMapping[ticker].tokenAddress != address(0), "Wallet: token does not exits");
+        require(tokenMapping[ticker].decimals != 0, "Wallet: token does not exits");
         _;
     }
 
@@ -35,7 +48,9 @@ contract Wallet is Ownable {
     * - 
     */
     function addToken(bytes32 ticker, address tokenAddress) external onlyOwner {
-        tokenMapping[ticker] = Token(ticker, tokenAddress);
+        require(tokenMapping[ticker].decimals == 0, "Wallet: token already exists");
+        uint8 decimals = ticker == ethTicker ? ethDecimals : IERC20_Custom(tokenAddress).decimals();
+        tokenMapping[ticker] = Token(ticker, tokenAddress, decimals);
         tokenList.push(tokenMapping[ticker]);
     }
 
