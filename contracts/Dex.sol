@@ -144,7 +144,7 @@ contract Dex is Wallet, OrderBook {
             uint256 remainingBuyOrderAmountToFill = topBuyOrder.amount - topBuyOrder.filled;
             uint256 remainingSellOrderAmountToFill = topSellOrder.amount - topSellOrder.filled;
             uint256 fillAmountTo = Math.min(remainingBuyOrderAmountToFill, remainingSellOrderAmountToFill);
-            uint256 fillAmountFrom = (fillAmountTo * fillPrice) / (1 << tokenMapping[tickerFrom].decimals);
+            uint256 fillAmountFrom = (fillAmountTo * fillPrice) / (10 ** tokenMapping[tickerFrom].decimals);
 
             /* 
             If FOK order then check if the fill amount == the order amount. 
@@ -241,7 +241,7 @@ contract Dex is Wallet, OrderBook {
     pairExists(tickerTo, tickerFrom)
     returns (uint256) {
         // Order cannot be placed when the (amount * price)/decimals == 0 
-        uint256 fillPrice = (price * amount) / (1 << tokenMapping[tickerFrom].decimals);
+        uint256 fillPrice = (price * amount) / (10 ** tokenMapping[tickerFrom].decimals);
         require(fillPrice > 0, "Dex: order amount is too small");
         // Buyer can't swap for tokens he doesn't have
         if (side == Side.BUY) {
