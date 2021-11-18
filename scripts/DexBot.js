@@ -94,6 +94,29 @@ module.exports = async function(callback) {
     await dex.createOrder(BUY, LIMIT, linkTicker, polygonTicker, toBN(7 * 10 ** 18), 1, {from: accounts[3]}) // buy 1 link for 7 matic each
     await dex.createOrder(SELL, LIMIT, linkTicker, polygonTicker, toBN(5 * 10 ** 18), 5, {from: accounts[0]}) // sell 5 link for 5 matic each
 
+    // Fill the orderbook with orders
+    await dex.createOrder(SELL, LIMIT, linkTicker, polygonTicker, toBN(21 * 10 ** 18), 5, {from: accounts[0]})
+    await dex.createOrder(SELL, LIMIT, linkTicker, polygonTicker, toBN(22 * 10 ** 18), 5, {from: accounts[1]})
+    await dex.createOrder(SELL, LIMIT, linkTicker, polygonTicker, toBN(23 * 10 ** 18), 5, {from: accounts[2]})
+    await dex.createOrder(SELL, LIMIT, linkTicker, polygonTicker, toBN(24 * 10 ** 18), 5, {from: accounts[3]})
+    await dex.createOrder(SELL, LIMIT, linkTicker, polygonTicker, toBN(25 * 10 ** 18), 5, {from: accounts[4]})
+    await dex.createOrder(SELL, LIMIT, linkTicker, polygonTicker, toBN(26 * 10 ** 18), 5, {from: accounts[0]})
+    await dex.createOrder(SELL, LIMIT, linkTicker, polygonTicker, toBN(27 * 10 ** 18), 5, {from: accounts[1]})
+    await dex.createOrder(SELL, LIMIT, linkTicker, polygonTicker, toBN(28 * 10 ** 18), 5, {from: accounts[2]})
+    await dex.createOrder(SELL, LIMIT, linkTicker, polygonTicker, toBN(29 * 10 ** 18), 5, {from: accounts[3]})
+    await dex.createOrder(SELL, LIMIT, linkTicker, polygonTicker, toBN(30 * 10 ** 18), 5, {from: accounts[4]})
+
+    await dex.createOrder(BUY, LIMIT, linkTicker, polygonTicker, toBN(5 * 10 ** 18), 5, {from: accounts[0]})
+    await dex.createOrder(BUY, LIMIT, linkTicker, polygonTicker, toBN(6 * 10 ** 18), 5, {from: accounts[1]})
+    await dex.createOrder(BUY, LIMIT, linkTicker, polygonTicker, toBN(7 * 10 ** 18), 5, {from: accounts[2]})
+    await dex.createOrder(BUY, LIMIT, linkTicker, polygonTicker, toBN(8 * 10 ** 18), 5, {from: accounts[3]})
+    await dex.createOrder(BUY, LIMIT, linkTicker, polygonTicker, toBN(9 * 10 ** 18), 5, {from: accounts[4]})
+    await dex.createOrder(BUY, LIMIT, linkTicker, polygonTicker, toBN(10 * 10 ** 18), 5, {from: accounts[0]})
+    await dex.createOrder(BUY, LIMIT, linkTicker, polygonTicker, toBN(11 * 10 ** 18), 5, {from: accounts[1]})
+    await dex.createOrder(BUY, LIMIT, linkTicker, polygonTicker, toBN(12 * 10 ** 18), 5, {from: accounts[2]})
+    await dex.createOrder(BUY, LIMIT, linkTicker, polygonTicker, toBN(13 * 10 ** 18), 5, {from: accounts[3]})
+    await dex.createOrder(BUY, LIMIT, linkTicker, polygonTicker, toBN(14 * 10 ** 18), 5, {from: accounts[4]})
+
     // await dex.createOrder(SELL, LIMIT, etherTicker, wbtcTicker, toBN(5 * 10 ** 16), 4, {from: accounts[1]}) // sell 4 wbtc for 0.05 ether each
     // await dex.createOrder(SELL, LIMIT, etherTicker, wbtcTicker, toBN(6 * 10 ** 16), 2, {from: accounts[2]}) // sell 2 wbtc for 0.06 ether each
     // await dex.createOrder(SELL, LIMIT, etherTicker, wbtcTicker, toBN(7 * 10 ** 16), 1, {from: accounts[3]}) // sell 1 wbtc for 0.07 ether each
