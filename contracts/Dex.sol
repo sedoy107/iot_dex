@@ -11,6 +11,9 @@ contract Dex is Wallet, OrderBook {
 
     using Math for uint256;
 
+    const MIN_PRICE = 10 ** 9;
+    const MIN_AMOUNT = 10 ** 9;
+
     event OrderCreated(
         uint256 id,
         address indexed trader,
@@ -43,6 +46,7 @@ contract Dex is Wallet, OrderBook {
     }
 
     function addPair(bytes32 tickerTo, bytes32 tickerFrom) public onlyOwner {
+        require(tickerTo != tickerFrom, "Dex: invalid pair");
         pairs[tickerTo][tickerFrom] = true;
     }
 
@@ -144,7 +148,7 @@ contract Dex is Wallet, OrderBook {
             uint256 remainingBuyOrderAmountToFill = topBuyOrder.amount - topBuyOrder.filled;
             uint256 remainingSellOrderAmountToFill = topSellOrder.amount - topSellOrder.filled;
             uint256 fillAmountTo = Math.min(remainingBuyOrderAmountToFill, remainingSellOrderAmountToFill);
-            uint256 fillAmountFrom = (fillAmountTo * fillPrice) / (10 ** tokenMapping[tickerFrom].decimals);
+            uint256 fillAmountFrom = (fillAmountTo * fillPrice) / (10 ** tokenMapping[tickerTo].decimals);
 
             /* 
             If FOK order then check if the fill amount == the order amount. 
@@ -241,8 +245,8 @@ contract Dex is Wallet, OrderBook {
     pairExists(tickerTo, tickerFrom)
     returns (uint256) {
         // Order cannot be placed when the (amount * price)/decimals == 0 
-        uint256 fillPrice = (price * amount) / (10 ** tokenMapping[tickerFrom].decimals);
-        require(fillPrice > 0, "Dex: order amount is too small");
+        require(price >= MIN_PRICE && amount >= MIN_AMOUNT, "Dex: price/amount is below minimum");
+        uint256 fillPrice = (price * amount) / (10 ** tokenMapping[tickerTo].decimals);
         // Buyer can't swap for tokens he doesn't have
         if (side == Side.BUY) {
             uint256 buyersTokensToSwapBalance = balances[msg.sender][tickerFrom];
