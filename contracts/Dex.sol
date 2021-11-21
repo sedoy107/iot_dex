@@ -11,8 +11,8 @@ contract Dex is Wallet, OrderBook {
 
     using Math for uint256;
 
-    const MIN_PRICE = 10 ** 9;
-    const MIN_AMOUNT = 10 ** 9;
+    uint256 constant MIN_PRICE = 10 ** 9;
+    uint256 constant MIN_AMOUNT = 10 ** 9;
 
     event OrderCreated(
         uint256 id,
