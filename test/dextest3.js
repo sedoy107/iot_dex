@@ -105,7 +105,7 @@ async function buildTokenObject(contract) {
     }
 }
 
-async function setupTest (accounts) {
+async function setupTest1 (accounts) {
     dex =  await Dex.deployed()
     
     const linkContract = await Link.deployed()
@@ -136,15 +136,28 @@ async function setupTest (accounts) {
             await dex.deposit(quantity, ticker, {from: accounts[accountId]})
         }
     }
+
+    // Add pairs ETH/...
+    await dex.addPair(eth.ticker, link.ticker)
+    await dex.addPair(eth.ticker, matic.ticker)
+    await dex.addPair(eth.ticker, wbtc.ticker)
+    await dex.addPair(eth.ticker, usdp.ticker)
+    // Add pairs LINK/...
+    await dex.addPair(link.ticker, matic.ticker)
+    await dex.addPair(link.ticker, wbtc.ticker)
+    // Add pairs USDP/...
+    await dex.addPair(usdp.ticker, link.ticker)
+    await dex.addPair(usdp.ticker, matic.ticker)
+    await dex.addPair(usdp.ticker, wbtc.ticker)
 }
 
 // ---------------------------------------------------------------------------
 describe("Dex Test", async () => {
-    contract("Balances checks on the participating accounts", async accounts => {
+    contract("generic test", async accounts => {
 
-        before("Setup contracts and deposit tokens", async () => setupTest(accounts))
+        before("setup contracts and deposit tokens", async () => setupTest1(accounts))
         
-        it ("Should have correct balance for each of the accounts", async () => {
+        it ("should have correct balance for each of the accounts", async () => {
             const tokens = [link, matic, wbtc, usdp]
         
             for (let {accountId, quantity} of balances) {
@@ -155,6 +168,34 @@ describe("Dex Test", async () => {
                     assert.equal((await dex.balances(accounts[accountId], ticker)).toString(), quantity, `Dex deposit failed:\n${balanceMsg}${tokenMsg}`)
                 }
             }
+        })
+
+        it ("should not create a limit order if the pair does not exist", async () => {
+            await truffleAssertions.reverts(
+                dex.createOrder(BUY, LIMIT, link.ticker, eth.ticker, 5, 4, {from: accounts[1]}) // buy 4 linkWei @ 5 ethWei
+            )
+        })
+
+        it ("should not create a limit order if price/amount are below 10^9", async () => {
+            await truffleAssertions.reverts(
+                dex.createOrder(BUY, LIMIT, eth.ticker, link.ticker, toBN(10 ** 20), 10 ** 9 - 1, {from: accounts[1]}) // buy 9k-1 ethWei @ 100 linkWei per ETH
+            )
+
+            await truffleAssertions.reverts(
+                dex.createOrder(BUY, LIMIT, eth.ticker, link.ticker, 10 ** 9 - 1, toBN(10 ** 20), {from: accounts[1]}) // buy 100 ETH @ 9k-1 linkWei per ETH
+            )
+        })
+
+        it ("should not create a market order if the price is below 10^9", async () => {
+            await truffleAssertions.reverts(
+                dex.createOrder(BUY, MARKET, link.ticker, eth.ticker, 0, 10 ** 9 - 1, {from: accounts[1]}) // buy 9k-1 linkWei @ market
+            )
+        })
+
+        it ("should not create a market order if the market is not available", async () => {
+            await truffleAssertions.reverts(
+                dex.createOrder(BUY, MARKET, link.ticker, eth.ticker, 0, 10 ** 9, {from: accounts[1]}) // buy 9k-1 linkWei @ market
+            )
         })
     })
 })
