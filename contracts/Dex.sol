@@ -245,7 +245,7 @@ contract Dex is Wallet, OrderBook {
     pairExists(tickerTo, tickerFrom)
     returns (uint256) {
         // Order cannot be placed when the (amount * price)/decimals == 0 
-        require(price >= MIN_PRICE && amount >= MIN_AMOUNT, "Dex: price/amount is below minimum");
+        require((price >= MIN_PRICE || orderType == OrderType.MARKET) && amount >= MIN_AMOUNT, "Dex: price/amount is below minimum");
         uint256 fillPrice = (price * amount) / (10 ** tokenMapping[tickerTo].decimals);
         // Buyer can't swap for tokens he doesn't have
         if (side == Side.BUY) {
