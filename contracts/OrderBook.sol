@@ -225,7 +225,6 @@ contract OrderBook {
         require(orderId < nextOrderId, "Order doesn't exist");
         for (uint256 i = 0; i < orderBook[tickerTo][tickerFrom][side].length; i++) {
             if (orderBook[tickerTo][tickerFrom][side][i].id == orderId) {
-                require(orderBook[tickerTo][tickerFrom][side][i].trader == msg.sender, "Must be the order owner");
                 orderBook[tickerTo][tickerFrom][side][i].isActive = false;
                 break;
             }
