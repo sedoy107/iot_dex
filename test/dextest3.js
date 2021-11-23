@@ -155,7 +155,7 @@ async function setupTest1 (accounts) {
 describe("Dex Test", async () => {
     contract("generic test", async accounts => {
 
-        before("setup contracts and deposit tokens", async () => setupTest1(accounts))
+        before("setup contracts and deposit tokens", async () => setupTest1())
         
         it ("should have correct balance for each of the accounts", async () => {
             const tokens = [link, matic, wbtc, usdp]

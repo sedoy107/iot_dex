@@ -10,25 +10,25 @@ contract("Token Test", async accounts => {
     it("balance of `accounts[0]` must be 1000 LINK", async () => {
         let link = await Link.deployed()
         let balance = await link.balanceOf(accounts[0])
-        assert.equal(balance, 1000000000000000000000)
+        assert.equal(balance, '100000000000000000000000')
     })
 
     it("balance of `accounts[0]` must be 1000 MATIC", async () => {
         let polygon = await Polygon.deployed()
         let balance = await polygon.balanceOf(accounts[0])
-        assert.equal(balance, 1000000000000000000000)
+        assert.equal(balance, '100000000000000000000000')
     })
 
     it("balance of `accounts[0]` must be 1000 USDP", async () => {
         let wrappedBitcoin = await WrappedBitcoin.deployed()
         let balance = await wrappedBitcoin.balanceOf(accounts[0])
-        assert.equal(balance, 1000000000000000000000)
+        assert.equal(balance, '100000000000000000000000')
     })
    
     it("balance of `accounts[0]` must be 1000 WBTC", async () => {
         let stableCoin = await StableCoin.deployed()
         let balance = await stableCoin.balanceOf(accounts[0])
-        assert.equal(balance, 1000000000000000000000)
+        assert.equal(balance, '100000000000000000000000')
     })
 
     it("balance of LINK must be 18", async () => {
