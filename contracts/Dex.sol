@@ -135,7 +135,7 @@ contract Dex is Wallet, OrderBook {
                 popTopOrder(Side.BUY, tickerTo, tickerFrom);
                 continue;
             }
-            if (topBuyOrder.id == nextOrderId - 1 && topSellOrder.orderType == OrderType.MOC) {
+            if (topSellOrder.id == nextOrderId - 1 && topSellOrder.orderType == OrderType.MOC) {
                 popTopOrder(Side.SELL, tickerTo, tickerFrom);
                 continue;
             }
