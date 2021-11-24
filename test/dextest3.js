@@ -190,6 +190,25 @@ describe("Dex Test", async () => {
        
     }
 
+    async function setupTest4 (accounts) {
+        await setupTest1(accounts)
+
+        // Fill the BUY si
+        await dex.createOrder(BUY, LIMIT, usdp.ticker, matic.ticker, '700000000000000000', (5 * (10 ** 9)).toString(), {from: accounts[5]}) // buy 50 USDP @ 0.70 MATIC 
+        await dex.createOrder(BUY, LIMIT, usdp.ticker, matic.ticker, '650000000000000000', (5 * (10 ** 9)).toString(), {from: accounts[4]}) // buy 50 USDP @ 0.65 MATIC 
+        await dex.createOrder(BUY, LIMIT, usdp.ticker, matic.ticker, '600000000000000000', (5 * (10 ** 9)).toString(), {from: accounts[3]}) // buy 50 USDP @ 0.60 MATIC 
+        await dex.createOrder(BUY, LIMIT, usdp.ticker, matic.ticker, '550000000000000000', (5 * (10 ** 9)).toString(), {from: accounts[2]}) // buy 50 USDP @ 0.55 MATIC 
+        await dex.createOrder(BUY, LIMIT, usdp.ticker, matic.ticker, '500000000000000000', (5 * (10 ** 9)).toString(), {from: accounts[1]}) // buy 50 USDP @ 0.50 MATIC 
+
+        // Fill the SELL side
+        await dex.createOrder(SELL, LIMIT, usdp.ticker, matic.ticker, '1000000000000000000', (5 * (10 ** 9)).toString(), {from: accounts[1]}) // sell 50 USDP @ 1.00 MATIC
+        await dex.createOrder(SELL, LIMIT, usdp.ticker, matic.ticker, '950000000000000000', (5 * (10 ** 9)).toString(), {from: accounts[2]}) // sell 50 USDP @ 0.95 MATIC
+        await dex.createOrder(SELL, LIMIT, usdp.ticker, matic.ticker, '900000000000000000', (5 * (10 ** 9)).toString(), {from: accounts[3]}) // sell 50 USDP @ 0.90 MATIC
+        await dex.createOrder(SELL, LIMIT, usdp.ticker, matic.ticker, '850000000000000000', (5 * (10 ** 9)).toString(), {from: accounts[4]}) // sell 50 USDP @ 0.85 MATIC
+        await dex.createOrder(SELL, LIMIT, usdp.ticker, matic.ticker, '800000000000000000', (5 * (10 ** 9)).toString(), {from: accounts[5]}) // sell 50 USDP @ 0.80 MATIC
+       
+    }
+
     contract("generic test", async accounts => {
 
         before("setup contracts and deposit tokens", async () => setupTest1(accounts))
@@ -214,30 +233,31 @@ describe("Dex Test", async () => {
         })
 
         it ("should not create a limit order if price OR amount are below 10^9", async () => {
+
             await truffleAssertions.reverts(
-                dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, (10 ** 20).toString(), (10 ** 9 - 1).toString(), {from: accounts[1]}) // buy 9k-1 maticWei @ 100 LINK per ETH
+                dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '1000000000', '999999999', {from: accounts[1]})
             )
 
             await truffleAssertions.reverts(
-                dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, (10 ** 9 - 1).toString(), (10 ** 20).toString(), {from: accounts[1]}) // buy 100 ETH @ 9k-1 linkWei per ETH
+                dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '999999999', '1000000000', {from: accounts[1]})
             )
         })
 
         it ("should not create a limit order if fund were not deposited", async () => {
             await truffleAssertions.reverts(
-                dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, 0, (10 ** 18).toString(), {from: accounts[0]}) // buy 1 ETH @ market
+                dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, 0, '1000000000000000000', {from: accounts[0]}) // buy 1 ETH @ market
             )
         })
 
         it ("should not create a market order if the price is below 10^9", async () => {
             await truffleAssertions.reverts(
-                dex.createOrder(BUY, MARKET, link.ticker, matic.ticker, 0, (10 ** 9 - 1).toString(), {from: accounts[1]}) // buy 9k-1 maticWei @ market
+                dex.createOrder(BUY, MARKET, link.ticker, matic.ticker, 0, '999999999', {from: accounts[1]}) // buy 9k-1 maticWei @ market
             )
         })
 
         it ("should not create a market order if the market is not available", async () => {
             await truffleAssertions.reverts(
-                dex.createOrder(BUY, MARKET, link.ticker, matic.ticker, 0, (10 ** 9).toString(), {from: accounts[1]}) // buy 9k maticWei @ market
+                dex.createOrder(BUY, MARKET, link.ticker, matic.ticker, 0, '1000000000', {from: accounts[1]}) // buy 9k maticWei @ market
             )
         })
     })
@@ -364,22 +384,22 @@ describe("Dex Test", async () => {
             await verifyBalances(accounts[5], link.ticker, matic.ticker, '495000000000000000000', '535000000000000000000')
             
             verifyOrderFilled(tx, 8, accounts[4], '7500000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '7500000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '7500000000000000000', '10000000000000000000')
             verifyOrderRemoved(tx, 8, accounts[4], '5000000000000000000')
             await verifyBalances(accounts[4], link.ticker, matic.ticker, '495000000000000000000', '537500000000000000000')
 
             verifyOrderFilled(tx, 7, accounts[3], '8000000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '8000000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '8000000000000000000', '15000000000000000000')
             verifyOrderRemoved(tx, 7, accounts[3], '5000000000000000000')
             await verifyBalances(accounts[3], link.ticker, matic.ticker, '495000000000000000000', '540000000000000000000')
 
             verifyOrderFilled(tx, 6, accounts[2], '8500000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '8500000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '8500000000000000000', '20000000000000000000')
             verifyOrderRemoved(tx, 6, accounts[2], '5000000000000000000')
             await verifyBalances(accounts[2], link.ticker, matic.ticker, '495000000000000000000', '542500000000000000000')
 
             verifyOrderFilled(tx, 5, accounts[1], '9000000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '9000000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '9000000000000000000', '25000000000000000000')
             verifyOrderRemoved(tx, 5, accounts[1], '5000000000000000000')
             verifyOrderRemoved(tx, 10, accounts[1], '25000000000000000000')
             await verifyBalances(accounts[1], link.ticker, matic.ticker, '520000000000000000000', '345000000000000000000')
@@ -396,29 +416,29 @@ describe("Dex Test", async () => {
             await verifyBalances(accounts[5], link.ticker, matic.ticker, '505000000000000000000', '485000000000000000000')
             
             verifyOrderFilled(tx, 1, accounts[4], '2500000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '2500000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '2500000000000000000', '10000000000000000000')
             verifyOrderRemoved(tx, 1, accounts[4], '5000000000000000000')
             await verifyBalances(accounts[4], link.ticker, matic.ticker, '505000000000000000000', '487500000000000000000')
 
             verifyOrderFilled(tx, 2, accounts[3], '2000000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '2000000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '2000000000000000000', '15000000000000000000')
             verifyOrderRemoved(tx, 2, accounts[3], '5000000000000000000')
             await verifyBalances(accounts[3], link.ticker, matic.ticker, '505000000000000000000', '490000000000000000000')
 
             verifyOrderFilled(tx, 3, accounts[2], '1500000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '1500000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '1500000000000000000', '20000000000000000000')
             verifyOrderRemoved(tx, 3, accounts[2], '5000000000000000000')
             await verifyBalances(accounts[2], link.ticker, matic.ticker, '505000000000000000000', '492500000000000000000')
 
             verifyOrderFilled(tx, 4, accounts[1], '1000000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '1000000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '1000000000000000000', '25000000000000000000')
             verifyOrderRemoved(tx, 4, accounts[1], '5000000000000000000')
             verifyOrderRemoved(tx, 10, accounts[1], '25000000000000000000')
             await verifyBalances(accounts[1], link.ticker, matic.ticker, '480000000000000000000', '545000000000000000000')
         })
     })
     
-    contract.only("test market order", async accounts => {
+    contract("test market order", async accounts => {
 
         beforeEach("setup contracts and deposit tokens", async () => setupTest2(accounts))
 
@@ -432,22 +452,22 @@ describe("Dex Test", async () => {
             await verifyBalances(accounts[5], link.ticker, matic.ticker, '495000000000000000000', '535000000000000000000')
             
             verifyOrderFilled(tx, 8, accounts[4], '7500000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '7500000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '7500000000000000000', '10000000000000000000')
             verifyOrderRemoved(tx, 8, accounts[4], '5000000000000000000')
             await verifyBalances(accounts[4], link.ticker, matic.ticker, '495000000000000000000', '537500000000000000000')
 
             verifyOrderFilled(tx, 7, accounts[3], '8000000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '8000000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '8000000000000000000', '15000000000000000000')
             verifyOrderRemoved(tx, 7, accounts[3], '5000000000000000000')
             await verifyBalances(accounts[3], link.ticker, matic.ticker, '495000000000000000000', '540000000000000000000')
 
             verifyOrderFilled(tx, 6, accounts[2], '8500000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '8500000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '8500000000000000000', '20000000000000000000')
             verifyOrderRemoved(tx, 6, accounts[2], '5000000000000000000')
             await verifyBalances(accounts[2], link.ticker, matic.ticker, '495000000000000000000', '542500000000000000000')
 
             verifyOrderFilled(tx, 5, accounts[1], '9000000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '9000000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '9000000000000000000', '25000000000000000000')
             verifyOrderRemoved(tx, 5, accounts[1], '5000000000000000000')
             verifyOrderRemoved(tx, 10, accounts[1], '25000000000000000000')
             await verifyBalances(accounts[1], link.ticker, matic.ticker, '520000000000000000000', '345000000000000000000')
@@ -464,29 +484,29 @@ describe("Dex Test", async () => {
             await verifyBalances(accounts[5], link.ticker, matic.ticker, '505000000000000000000', '485000000000000000000')
             
             verifyOrderFilled(tx, 1, accounts[4], '2500000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '2500000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '2500000000000000000', '10000000000000000000')
             verifyOrderRemoved(tx, 1, accounts[4], '5000000000000000000')
             await verifyBalances(accounts[4], link.ticker, matic.ticker, '505000000000000000000', '487500000000000000000')
 
             verifyOrderFilled(tx, 2, accounts[3], '2000000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '2000000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '2000000000000000000', '15000000000000000000')
             verifyOrderRemoved(tx, 2, accounts[3], '5000000000000000000')
             await verifyBalances(accounts[3], link.ticker, matic.ticker, '505000000000000000000', '490000000000000000000')
 
             verifyOrderFilled(tx, 3, accounts[2], '1500000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '1500000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '1500000000000000000', '20000000000000000000')
             verifyOrderRemoved(tx, 3, accounts[2], '5000000000000000000')
             await verifyBalances(accounts[2], link.ticker, matic.ticker, '505000000000000000000', '492500000000000000000')
 
             verifyOrderFilled(tx, 4, accounts[1], '1000000000000000000', '5000000000000000000')
-            verifyOrderFilled(tx, 10, accounts[1], '1000000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '1000000000000000000', '25000000000000000000')
             verifyOrderRemoved(tx, 4, accounts[1], '5000000000000000000')
             verifyOrderRemoved(tx, 10, accounts[1], '25000000000000000000')
             await verifyBalances(accounts[1], link.ticker, matic.ticker, '480000000000000000000', '545000000000000000000')
         })
 
         it("market order buys the market and remains in the order book", async () => {
-            tx = await dex.createOrder(BUY, MARKET, link.ticker, matic.ticker, '0', '30000000000000000000', {from: accounts[1]}) // buy 25 LINK @ MARKET
+            tx = await dex.createOrder(BUY, MARKET, link.ticker, matic.ticker, '0', '30000000000000000000', {from: accounts[1]}) // buy 30 LINK @ MARKET
             await verifyBalances(accounts[1], link.ticker, matic.ticker, '520000000000000000000', '345000000000000000000')
             
             const orderBookSell = await dex.getOrderBook(SELL, link.ticker, matic.ticker)
@@ -507,7 +527,7 @@ describe("Dex Test", async () => {
         })
 
         it("market order sells the market and remains in the order book", async () => {
-            tx = await dex.createOrder(SELL, MARKET, link.ticker, matic.ticker, '0', '30000000000000000000', {from: accounts[1]}) // sell 25 LINK @ MARKET
+            tx = await dex.createOrder(SELL, MARKET, link.ticker, matic.ticker, '0', '30000000000000000000', {from: accounts[1]}) // sell 30 LINK @ MARKET
             await verifyBalances(accounts[1], link.ticker, matic.ticker, '480000000000000000000', '545000000000000000000')
 
             const orderBookBuy = await dex.getOrderBook(BUY, link.ticker, matic.ticker)
@@ -525,6 +545,259 @@ describe("Dex Test", async () => {
             assert.equal(amount, '30000000000000000000')
             assert.equal(price, '1000000000000000000')
             assert.equal(filled, '25000000000000000000')
+        })
+    })
+
+    contract("remaining order amount that is < the MIN_AMOUNT ( 10^9 ) should not be put on the order book", async accounts => {
+
+        before("setup contracts and deposit tokens", async () => setupTest2(accounts))
+
+        it("limit order executed but the remaining amount is too small to be filled at the requested price", async () => {
+            tx = await dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '900000000000000000', '5000000000000000001', {from: accounts[1]}) // sell 5 LINK and 1 wei @ 0.9 MATIC
+            await verifyBalances(accounts[1], link.ticker, matic.ticker, '495000000000000000000', '515000000000000000000')
+
+            const orderBookBuy = await dex.getOrderBook(BUY, link.ticker, matic.ticker)
+            assert.equal(orderBookBuy.length, 4)
+
+            const orderBookSell = await dex.getOrderBook(SELL, link.ticker, matic.ticker)
+            assert.equal(orderBookSell.length, 5)
+
+            await verifyOrderRemoved(tx, 10, accounts[1], '5000000000000000000')
+        })
+    })
+
+    contract("limit MOC order test", async accounts => {
+
+        before("setup contracts and deposit tokens", async () => setupTest2(accounts))
+
+        it("should not let MOC buy order to be placed; should emit events", async () => {
+            tx = await dex.createOrder(BUY, MOC, link.ticker, matic.ticker, '9000000000000000000', '1000000000000000000', {from: accounts[1]}) // buy 1 LINK @ 9 MATIC
+            verifyOrderCreated (tx, 10, accounts[1], BUY, MOC, '9000000000000000000', '1000000000000000000')
+            verifyOrderRemoved(tx, 10, accounts[1], '0')
+            await verifyBalances(accounts[1], link.ticker, matic.ticker, '500000000000000000000', '500000000000000000000')
+            await verifyBalances(accounts[5], link.ticker, matic.ticker, '500000000000000000000', '500000000000000000000')
+        })
+
+        it("should not let MOC sell order to be placed; should emit events", async () => {
+            tx = await dex.createOrder(SELL, MOC, link.ticker, matic.ticker, '1000000000000000000', '1000000000000000000', {from: accounts[1]}) // sell 1 LINK @ 1 MATIC
+            verifyOrderCreated (tx, 11, accounts[1], SELL, MOC, '1000000000000000000', '1000000000000000000')
+            verifyOrderRemoved(tx, 11, accounts[1], '0')
+            await verifyBalances(accounts[1], link.ticker, matic.ticker, '500000000000000000000', '500000000000000000000')
+            await verifyBalances(accounts[5], link.ticker, matic.ticker, '500000000000000000000', '500000000000000000000')
+        })
+
+        it("should let MOC buy order in; should not emit OrderFilled and OrderRemoved events", async () => {
+            tx = await dex.createOrder(BUY, MOC, link.ticker, matic.ticker, '1000000000000000000', '1000000000000000000', {from: accounts[1]}) // buy 1 LINK @ 1 MATIC
+            verifyOrderCreated (tx, 12, accounts[1], BUY, MOC, '1000000000000000000', '1000000000000000000')
+            truffleAssertions.eventNotEmitted(tx, 'OrderRemoved')
+            truffleAssertions.eventNotEmitted(tx, 'OrderFilled')
+
+            const orderBookBuy = await dex.getOrderBook(BUY, link.ticker, matic.ticker)
+            assert.equal(orderBookBuy.length, 6)
+        })
+
+        it("should let MOC sell order in; should not emit OrderFilled and OrderRemoved events", async () => {
+            tx = await dex.createOrder(SELL, MOC, link.ticker, matic.ticker, '9000000000000000000', '1000000000000000000', {from: accounts[1]}) // sell 1 LINK @ 9 MATIC
+            verifyOrderCreated (tx, 13, accounts[1], SELL, MOC, '9000000000000000000', '1000000000000000000')
+            truffleAssertions.eventNotEmitted(tx, 'OrderRemoved')
+            truffleAssertions.eventNotEmitted(tx, 'OrderFilled')
+
+            const orderBookSell = await dex.getOrderBook(SELL, link.ticker, matic.ticker)
+            assert.equal(orderBookSell.length, 6)
+        })
+    })
+
+    contract("limit FOK order test", async accounts => {
+
+        before("setup contracts and deposit tokens", async () => setupTest2(accounts))
+
+        it("buy FOK order should not be filled and should be removed", async () => {
+            tx = await dex.createOrder(BUY, FOK, link.ticker, matic.ticker, '9000000000000000000', '30000000000000000000', {from: accounts[1]}) // buy 30 LINK @ 9 MATIC
+            verifyOrderCreated (tx, 10, accounts[1], BUY, FOK, '9000000000000000000', '30000000000000000000')
+            verifyOrderRemoved(tx, 10, accounts[1], '0')
+            truffleAssertions.eventNotEmitted(tx, 'OrderFilled')
+            
+            const orderBookSell = await dex.getOrderBook(SELL, link.ticker, matic.ticker)
+            assert.equal(orderBookSell.length, 5)
+
+            const orderBookBuy = await dex.getOrderBook(BUY, link.ticker, matic.ticker)
+            assert.equal(orderBookBuy.length, 5)
+        })
+
+        it("sell FOK order should not be filled and should be removed", async () => {
+            tx = await dex.createOrder(SELL, FOK, link.ticker, matic.ticker, '1000000000000000000', '30000000000000000000', {from: accounts[1]}) // sell 30 LINK @ 1 MATIC
+            verifyOrderCreated (tx, 11, accounts[1], SELL, FOK, '1000000000000000000', '30000000000000000000')
+            verifyOrderRemoved(tx, 11, accounts[1], '0')
+            truffleAssertions.eventNotEmitted(tx, 'OrderFilled')
+
+            const orderBookBuy = await dex.getOrderBook(BUY, link.ticker, matic.ticker)
+            assert.equal(orderBookBuy.length, 5)
+
+            const orderBookSell = await dex.getOrderBook(SELL, link.ticker, matic.ticker)
+            assert.equal(orderBookSell.length, 5)
+        })
+
+        it("buy FOK order should be filled in full", async () => {
+            tx = await dex.createOrder(BUY, FOK, link.ticker, matic.ticker, '9000000000000000000', '1000000000000000000', {from: accounts[1]}) // buy 1 LINK @ 9 MATIC
+            verifyOrderCreated (tx, 12, accounts[1], BUY, FOK, '9000000000000000000', '1000000000000000000')
+            verifyOrderRemoved(tx, 12, accounts[1], '1000000000000000000')
+            verifyOrderFilled(tx, 9, accounts[5], '7000000000000000000', '1000000000000000000')
+            verifyOrderFilled(tx, 12, accounts[1], '7000000000000000000', '1000000000000000000')
+            
+            const orderBookSell = await dex.getOrderBook(SELL, link.ticker, matic.ticker)
+            assert.equal(orderBookSell.length, 5)
+
+            const orderBookBuy = await dex.getOrderBook(BUY, link.ticker, matic.ticker)
+            assert.equal(orderBookBuy.length, 5)
+        })
+
+        it("sell FOK order should be filled in full", async () => {
+            tx = await dex.createOrder(SELL, FOK, link.ticker, matic.ticker, '1000000000000000000', '1000000000000000000', {from: accounts[1]}) // sell 1 LINK @ 1 MATIC
+            verifyOrderCreated (tx, 13, accounts[1], SELL, FOK, '1000000000000000000', '1000000000000000000')
+            verifyOrderRemoved(tx, 13, accounts[1], '1000000000000000000')
+            verifyOrderFilled(tx, 0, accounts[5], '3000000000000000000', '1000000000000000000')
+            verifyOrderFilled(tx, 13, accounts[1], '3000000000000000000', '1000000000000000000')
+
+            const orderBookBuy = await dex.getOrderBook(BUY, link.ticker, matic.ticker)
+            assert.equal(orderBookBuy.length, 5)
+
+            const orderBookSell = await dex.getOrderBook(SELL, link.ticker, matic.ticker)
+            assert.equal(orderBookSell.length, 5)
+        })
+    })
+
+    contract("limit IOC order test", async accounts => {
+
+        before("setup contracts and deposit tokens", async () => setupTest2(accounts))
+
+        it("buy IOC order should be filled and the remaining amount should not rest on the order book", async () => {
+            tx = await dex.createOrder(BUY, IOC, link.ticker, matic.ticker, '9000000000000000000', '30000000000000000000', {from: accounts[1]}) // buy 30 LINK @ 9 MATIC
+            verifyOrderCreated (tx, 10, accounts[1], BUY, IOC, '9000000000000000000', '30000000000000000000')
+            verifyOrderRemoved(tx, 10, accounts[1], '5000000000000000000')
+            verifyOrderFilled(tx, 9, accounts[5], '7000000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '7000000000000000000', '5000000000000000000')
+            
+            const orderBookSell = await dex.getOrderBook(SELL, link.ticker, matic.ticker)
+            assert.equal(orderBookSell.length, 4)
+        })
+
+        it("sell IOC order should be filled and the remaining amount should not rest on the order book", async () => {
+            tx = await dex.createOrder(SELL, IOC, link.ticker, matic.ticker, '1000000000000000000', '30000000000000000000', {from: accounts[1]}) // sell 30 LINK @ 1 MATIC
+            verifyOrderCreated (tx, 11, accounts[1], SELL, IOC, '1000000000000000000', '30000000000000000000')
+            verifyOrderRemoved(tx, 11, accounts[1], '5000000000000000000')
+            verifyOrderFilled(tx, 0, accounts[5], '3000000000000000000', '5000000000000000000')
+            verifyOrderFilled(tx, 11, accounts[1], '3000000000000000000', '5000000000000000000')
+
+            const orderBookBuy = await dex.getOrderBook(BUY, link.ticker, matic.ticker)
+            assert.equal(orderBookBuy.length, 4)
+        })
+    })
+
+    contract("limit orders with stable coin that has 8 decimals", async accounts => {
+
+        beforeEach("setup contracts and deposit tokens", async () => setupTest4(accounts))
+
+        it("should place buy limit order", async () => {
+            tx = await dex.createOrder(BUY, LIMIT, usdp.ticker, matic.ticker, '1000000000000000000', '1000000000', {from: accounts[1]}) // buy 10 USDP @ 1.0 MATIC
+            verifyOrderCreated (tx, 10, accounts[1], BUY, LIMIT, '1000000000000000000', '1000000000')
+            verifyOrderFilled(tx, 9, accounts[5], '800000000000000000', '1000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '800000000000000000', '1000000000')
+            verifyOrderRemoved(tx, 10, accounts[1], '1000000000')
+            
+            const orderBookSell = await dex.getOrderBook(SELL, usdp.ticker, matic.ticker)
+            assert.equal(orderBookSell.length, 5)
+
+            await verifyBalances(accounts[1], usdp.ticker, matic.ticker, '500000000001000000000', '492000000000000000000')
+            await verifyBalances(accounts[5], usdp.ticker, matic.ticker, '499999999999000000000', '508000000000000000000')
+        })
+
+        it("should place sell limit order", async () => {
+            tx = await dex.createOrder(SELL, LIMIT, usdp.ticker, matic.ticker, '500000000000000000', '1000000000', {from: accounts[1]}) // sell 10 USDP @ 0.4 MATIC
+            verifyOrderCreated (tx, 10, accounts[1], SELL, LIMIT, '500000000000000000', '1000000000')
+            verifyOrderFilled(tx, 0, accounts[5], '700000000000000000', '1000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '700000000000000000', '1000000000')
+            verifyOrderRemoved(tx, 10, accounts[1], '1000000000')
+
+            const orderBookBuy = await dex.getOrderBook(BUY, usdp.ticker, matic.ticker)
+            assert.equal(orderBookBuy.length, 5)
+
+            await verifyBalances(accounts[1], usdp.ticker, matic.ticker, '499999999999000000000', '507000000000000000000')
+            await verifyBalances(accounts[5], usdp.ticker, matic.ticker, '500000000001000000000', '493000000000000000000')
+        })
+    })
+
+    contract("limit orders with stable coin that has 8 decimals", async accounts => {
+
+        beforeEach("setup contracts and deposit tokens", async () => setupTest4(accounts))
+
+        it("buy entire market with limit order", async () => {
+            tx = await dex.createOrder(BUY, LIMIT, usdp.ticker, matic.ticker, '1000000000000000000', '25000000000', {from: accounts[1]}) // buy 250 USDP @ 1 MATIC
+            verifyOrderCreated (tx, 10, accounts[1], BUY, LIMIT, '1000000000000000000', '25000000000')
+            
+            verifyOrderFilled(tx, 9, accounts[5], '800000000000000000', '5000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '800000000000000000', '5000000000')
+            verifyOrderRemoved(tx, 9, accounts[5], '5000000000')
+
+            verifyOrderFilled(tx, 8, accounts[4], '850000000000000000', '5000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '850000000000000000', '10000000000')
+            verifyOrderRemoved(tx, 8, accounts[4], '5000000000')
+
+            verifyOrderFilled(tx, 7, accounts[3], '900000000000000000', '5000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '900000000000000000', '15000000000')
+            verifyOrderRemoved(tx, 7, accounts[3], '5000000000')
+
+            verifyOrderFilled(tx, 6, accounts[2], '950000000000000000', '5000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '950000000000000000', '20000000000')
+            verifyOrderRemoved(tx, 6, accounts[2], '5000000000')
+
+            verifyOrderFilled(tx, 5, accounts[1], '1000000000000000000', '5000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '1000000000000000000', '25000000000')
+            verifyOrderRemoved(tx, 5, accounts[1], '5000000000')
+            verifyOrderRemoved(tx, 10, accounts[1], '25000000000')
+            
+            const orderBookSell = await dex.getOrderBook(SELL, usdp.ticker, matic.ticker)
+            assert.equal(orderBookSell.length, 0)
+
+            await verifyBalances(accounts[5], usdp.ticker, matic.ticker, '499999999995000000000', '540000000000000000000')
+            await verifyBalances(accounts[4], usdp.ticker, matic.ticker, '499999999995000000000', '542500000000000000000')
+            await verifyBalances(accounts[3], usdp.ticker, matic.ticker, '499999999995000000000', '545000000000000000000')
+            await verifyBalances(accounts[2], usdp.ticker, matic.ticker, '499999999995000000000', '547500000000000000000')
+            await verifyBalances(accounts[1], usdp.ticker, matic.ticker, '500000000020000000000', '325000000000000000000')
+        })
+
+        it("buy entire market with limit order", async () => {
+            tx = await dex.createOrder(SELL, LIMIT, usdp.ticker, matic.ticker, '500000000000000000', '25000000000', {from: accounts[1]}) // sell 250 USDP @ 0.5 MATIC
+            verifyOrderCreated (tx, 10, accounts[1], SELL, LIMIT, '500000000000000000', '25000000000')
+            
+            verifyOrderFilled(tx, 0, accounts[5], '700000000000000000', '5000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '700000000000000000', '5000000000')
+            verifyOrderRemoved(tx, 0, accounts[5], '5000000000')
+
+            verifyOrderFilled(tx, 1, accounts[4], '650000000000000000', '5000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '650000000000000000', '10000000000')
+            verifyOrderRemoved(tx, 1, accounts[4], '5000000000')
+
+            verifyOrderFilled(tx, 2, accounts[3], '600000000000000000', '5000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '600000000000000000', '15000000000')
+            verifyOrderRemoved(tx, 2, accounts[3], '5000000000')
+
+            verifyOrderFilled(tx, 3, accounts[2], '550000000000000000', '5000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '550000000000000000', '20000000000')
+            verifyOrderRemoved(tx, 3, accounts[2], '5000000000')
+
+            verifyOrderFilled(tx, 4, accounts[1], '500000000000000000', '5000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '500000000000000000', '25000000000')
+            verifyOrderRemoved(tx, 4, accounts[1], '5000000000')
+            verifyOrderRemoved(tx, 10, accounts[1], '25000000000')
+
+            const orderBookBuy = await dex.getOrderBook(BUY, usdp.ticker, matic.ticker)
+            assert.equal(orderBookBuy.length, 0)
+
+            await verifyBalances(accounts[5], usdp.ticker, matic.ticker, '500000000005000000000', '465000000000000000000')
+            await verifyBalances(accounts[4], usdp.ticker, matic.ticker, '500000000005000000000', '467500000000000000000')
+            await verifyBalances(accounts[3], usdp.ticker, matic.ticker, '500000000005000000000', '470000000000000000000')
+            await verifyBalances(accounts[2], usdp.ticker, matic.ticker, '500000000005000000000', '472500000000000000000')
+            await verifyBalances(accounts[1], usdp.ticker, matic.ticker, '499999999980000000000', '625000000000000000000')
         })
     })
 })
