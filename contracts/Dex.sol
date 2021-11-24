@@ -105,7 +105,7 @@ contract Dex is Wallet, OrderBook {
             
             /* 
             If the top orders are both market orders then their price will be equal as the previous market
-            order's price will be the current market price and will propogate the the new market order
+            order's price will be the current market price and will propogate to the new market order
             that is currently being placed on the opposite side of the order book.
             */
             if (topBuyOrder.orderType == OrderType.MARKET && topSellOrder.orderType == OrderType.MARKET) {
@@ -125,9 +125,9 @@ contract Dex is Wallet, OrderBook {
                 break;
 
             /* 
-            For the most recent order that comes to processing, check if it is MOC order. If so
-            then pop at this point it can fulfill the opposite side of orders and hence it won't 
-            rest on the order book. It should be cancelled.
+            For the most recent order that comes to processing, check if it is a MOC order. If so
+            then pop it at this point as it will fulfill the opposite side of orders and hence won't 
+            rest on the order book.
 
             Only one of the top orders can be cancelled as only one will be the most recent.
             */
@@ -202,8 +202,8 @@ contract Dex is Wallet, OrderBook {
                 fillAmountTo
             );
 
-            // If order.filled == amount, then the order can be popped
-            if (topBuyOrder.filled == topBuyOrder.amount) {
+            // If order.amount - order.filled < MIN_AMONUT, then the should be popped
+            if (topBuyOrder.amount - topBuyOrder.filled < MIN_AMOUNT) {
                 popTopOrder(Side.BUY, tickerTo, tickerFrom);
             }
             // If IOC order is partially filled then still pop the order from the order book
@@ -211,7 +211,8 @@ contract Dex is Wallet, OrderBook {
                 popTopOrder(Side.BUY, tickerTo, tickerFrom);
             }
 
-            if (topSellOrder.filled == topSellOrder.amount) {
+            // If order.amount - order.filled < MIN_AMONUT, then the should be popped
+            if (topSellOrder.amount - topSellOrder.filled < MIN_AMOUNT ) {
                 popTopOrder(Side.SELL, tickerTo, tickerFrom);
             }
             // If IOC order is partially filled then still pop the order from the order book
