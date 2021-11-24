@@ -192,18 +192,21 @@ contract Dex is Wallet, OrderBook {
                 topBuyOrder.id,
                 topBuyOrder.trader,
                 fillPrice,
-                fillAmountTo
+                topBuyOrder.filled
             );
 
             emit OrderFilled(
                 topSellOrder.id,
                 topSellOrder.trader,
                 fillPrice,
-                fillAmountTo
+                topSellOrder.filled
             );
 
+            uint256 nextBuyFillPrice = ((topBuyOrder.amount - topBuyOrder.filled) * topBuyOrder.price) / (10 ** tokenMapping[tickerTo].decimals);
+            uint256 nextSellFillPrice = ((topSellOrder.amount - topSellOrder.filled) * topSellOrder.price) / (10 ** tokenMapping[tickerTo].decimals);
+
             // If order.amount - order.filled < MIN_AMONUT, then the should be popped
-            if (topBuyOrder.amount - topBuyOrder.filled < MIN_AMOUNT) {
+            if (nextBuyFillPrice == 0) {
                 popTopOrder(Side.BUY, tickerTo, tickerFrom);
             }
             // If IOC order is partially filled then still pop the order from the order book
@@ -212,7 +215,7 @@ contract Dex is Wallet, OrderBook {
             }
 
             // If order.amount - order.filled < MIN_AMONUT, then the should be popped
-            if (topSellOrder.amount - topSellOrder.filled < MIN_AMOUNT ) {
+            if (nextSellFillPrice == 0) {
                 popTopOrder(Side.SELL, tickerTo, tickerFrom);
             }
             // If IOC order is partially filled then still pop the order from the order book
@@ -245,9 +248,12 @@ contract Dex is Wallet, OrderBook {
     virtual override 
     pairExists(tickerTo, tickerFrom)
     returns (uint256) {
-        // Order cannot be placed when the (amount * price)/decimals == 0 
-        require((price >= MIN_PRICE || orderType == OrderType.MARKET) && amount >= MIN_AMOUNT, "Dex: price/amount is below minimum");
+
         uint256 fillPrice = (price * amount) / (10 ** tokenMapping[tickerTo].decimals);
+
+        // Order cannot be placed when the (amount * price)/decimals == 0 
+        require(fillPrice > 0 || (orderType == OrderType.MARKET && amount >= MIN_AMOUNT) , "Dex: price/amount is below minimum");
+        
         // Buyer can't swap for tokens he doesn't have
         if (side == Side.BUY) {
             uint256 buyersTokensToSwapBalance = balances[msg.sender][tickerFrom];
