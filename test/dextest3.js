@@ -800,4 +800,67 @@ describe("Dex Test", async () => {
             await verifyBalances(accounts[1], usdp.ticker, matic.ticker, '499999999980000000000', '625000000000000000000')
         })
     })
+
+    async function setupTest5 (accounts) {
+        await setupTest1(accounts)
+
+        const ethAmount = toWei('1000000000', 'gwei') // 1 ETH
+        for (let {accountId} of balances) {
+            await dex.methods['deposit()']({from: accounts[accountId], value: ethAmount})
+        }
+
+        // Fill the BUY side
+        await dex.createOrder(BUY, LIMIT, eth.ticker, usdp.ticker, '400000000000', ethAmount, {from: accounts[5]}) // buy 1 ETH @ 4000 USDP 
+        await dex.createOrder(BUY, LIMIT, eth.ticker, usdp.ticker, '350000000000', ethAmount, {from: accounts[4]}) // buy 1 ETH @ 3500 USDP 
+        await dex.createOrder(BUY, LIMIT, eth.ticker, usdp.ticker, '300000000000', ethAmount, {from: accounts[3]}) // buy 1 ETH @ 3000 USDP 
+        await dex.createOrder(BUY, LIMIT, eth.ticker, usdp.ticker, '250000000000', ethAmount, {from: accounts[2]}) // buy 1 ETH @ 2500 USDP 
+        await dex.createOrder(BUY, LIMIT, eth.ticker, usdp.ticker, '200000000000', ethAmount, {from: accounts[1]}) // buy 1 ETH @ 2000 USDP 
+
+        // Fill the SELL side
+        await dex.createOrder(SELL, LIMIT, eth.ticker, usdp.ticker, '700000000000', ethAmount, {from: accounts[1]}) // sell 1 ETH @ 7000 USDP
+        await dex.createOrder(SELL, LIMIT, eth.ticker, usdp.ticker, '650000000000', ethAmount, {from: accounts[2]}) // sell 1 ETH @ 6500 USDP
+        await dex.createOrder(SELL, LIMIT, eth.ticker, usdp.ticker, '600000000000', ethAmount, {from: accounts[3]}) // sell 1 ETH @ 6000 USDP
+        await dex.createOrder(SELL, LIMIT, eth.ticker, usdp.ticker, '550000000000', ethAmount, {from: accounts[4]}) // sell 1 ETH @ 5500 USDP
+        await dex.createOrder(SELL, LIMIT, eth.ticker, usdp.ticker, '500000000000', ethAmount, {from: accounts[5]}) // sell 1 ETH @ 5000 USDP
+    
+    }
+
+    contract.only("more tests using ETH and USDP", async accounts => {
+        
+        before("setup contracts and deposit tokens", async () => setupTest5(accounts))
+
+        after("return ETH back to the owners", async () => {
+            for (let {accountId} of balances) {
+                const balance = await dex.balances(accounts[accountId], eth.ticker, {from: accounts[accountId]})
+                await dex.methods['withdraw(uint256)'](balance, {from: accounts[accountId]})
+            }
+        })
+        
+        it ("should correctly execute buy limit order", async () => {
+            tx = await dex.createOrder(BUY, LIMIT, eth.ticker, usdp.ticker, '500000000000', '100000000000000000', {from: accounts[1]}) // buy 0.1 ETH @ 5000 USDP
+            verifyOrderFilled(tx, 9, accounts[5], '500000000000', '100000000000000000')
+            verifyOrderFilled(tx, 10, accounts[1], '500000000000', '100000000000000000')
+            verifyOrderRemoved(tx, 10, accounts[1], '100000000000000000')
+            verifyBalances(accounts[5], eth.ticker, usdp.ticker, '900000000000000000', '500000000050000000000')
+            verifyBalances(accounts[1], eth.ticker, usdp.ticker, '1100000000000000000', '499999999950000000000')
+        })
+
+        it ("should correctly execute sell limit order", async () => {
+            tx = await dex.createOrder(SELL, LIMIT, eth.ticker, usdp.ticker, '200000000000', '100000000000000000', {from: accounts[1]}) // buy 0.1 ETH @ 2000 USDP
+            verifyOrderFilled(tx, 0, accounts[5], '400000000000', '100000000000000000')
+            verifyOrderFilled(tx, 11, accounts[1], '400000000000', '100000000000000000')
+            verifyOrderRemoved(tx, 11, accounts[1], '100000000000000000')
+            verifyBalances(accounts[5], eth.ticker, usdp.ticker, '1000000000000000000', '500000000010000000000')
+            verifyBalances(accounts[1], eth.ticker, usdp.ticker, '1000000000000000000', '499999999990000000000')
+        })
+
+        it ("should remove the remaining amount that is too small to be filled at the requested price", async () => {
+            tx = await dex.createOrder(BUY, LIMIT, eth.ticker, usdp.ticker, '500000000000', '900000000000000001', {from: accounts[1]}) // buy 0.1 ETH @ 5000 USDP
+            verifyOrderFilled(tx, 9, accounts[5], '500000000000', '1000000000000000000')
+            verifyOrderFilled(tx, 12, accounts[1], '500000000000', '900000000000000000')
+            verifyOrderRemoved(tx, 9, accounts[5], '1000000000000000000')
+            verifyOrderRemoved(tx, 12, accounts[1], '900000000000000000')
+        })
+
+    })
 })
