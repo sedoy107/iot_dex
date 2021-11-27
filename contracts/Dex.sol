@@ -41,7 +41,7 @@ contract Dex is Wallet, OrderBook {
     mapping(bytes32 => mapping (bytes32 => bool)) public pairs;
 
     modifier pairExists (bytes32 tickerTo, bytes32 tickerFrom) {
-        require (pairs[tickerTo][tickerFrom], "Dex: pair doesn't exist");
+        require (pairs[tickerTo][tickerFrom]);
         _;
     }
 
@@ -172,6 +172,16 @@ contract Dex is Wallet, OrderBook {
             if (fokBreak)
                 continue;
             
+            // If any of the top orders were to use more funds than available then pop the order w/o filling it
+            if (balances[topBuyOrder.trader][tickerFrom] < fillAmountFrom) {
+                popTopOrder(Side.BUY, tickerTo, tickerFrom);
+                continue;
+            }
+            if (balances[topSellOrder.trader][tickerTo] < fillAmountTo) {
+                popTopOrder(Side.SELL, tickerTo, tickerFrom);
+                continue;
+            }
+
             // Increase tickerTo and decrease tickerFrom tokens in buyer's wallet
             balances[topBuyOrder.trader][tickerTo] += fillAmountTo;
             balances[topBuyOrder.trader][tickerFrom] -= fillAmountFrom;
@@ -184,8 +194,8 @@ contract Dex is Wallet, OrderBook {
             topBuyOrder.filled += fillAmountTo;
             topSellOrder.filled += fillAmountTo;
 
-            assert(topBuyOrder.filled <= topBuyOrder.amount);
-            assert(topSellOrder.filled <= topSellOrder.amount);
+            //assert(topBuyOrder.filled <= topBuyOrder.amount);
+            //assert(topSellOrder.filled <= topSellOrder.amount);
 
             // Emit OrderFilled event for sell and buy orders
             emit OrderFilled(
@@ -292,10 +302,10 @@ contract Dex is Wallet, OrderBook {
     virtual override
     pairExists(tickerTo, tickerFrom)
     {
-        require(orderId < nextOrderId, "Order doesn't exist");
+        require(orderId < nextOrderId);
         for (uint256 i = 0; i < orderBook[tickerTo][tickerFrom][side].length; i++) {
             if (orderBook[tickerTo][tickerFrom][side][i].id == orderId) {
-                require(orderBook[tickerTo][tickerFrom][side][i].trader == msg.sender, "Must be the order owner");
+                require(orderBook[tickerTo][tickerFrom][side][i].trader == msg.sender);
                 orderBook[tickerTo][tickerFrom][side][i].isActive = false;
                 break;
             }
