@@ -39,6 +39,7 @@ contract Dex is Wallet, OrderBook {
     );
 
     mapping(bytes32 => mapping (bytes32 => bool)) public pairs;
+    mapping (address => mapping(bytes32 => uint256)) public lockedBalances;
 
     modifier pairExists (bytes32 tickerTo, bytes32 tickerFrom) {
         require (pairs[tickerTo][tickerFrom], "Dex: pair doesn't exist");
@@ -175,9 +176,11 @@ contract Dex is Wallet, OrderBook {
             // Increase tickerTo and decrease tickerFrom tokens in buyer's wallet
             balances[topBuyOrder.trader][tickerTo] += fillAmountTo;
             balances[topBuyOrder.trader][tickerFrom] -= fillAmountFrom;
+            lockedBalances[topBuyOrder.trader][tickerFrom] -= fillAmountFrom;
 
             // Decrease tickerTo and increase tickerFrom tokens in sellers's wallet
             balances[topSellOrder.trader][tickerTo] -= fillAmountTo;
+            lockedBalances[topSellOrder.trader][tickerTo] -= fillAmountTo;
             balances[topSellOrder.trader][tickerFrom] += fillAmountFrom;
 
             // Increase filled amount for both, buyer seller
@@ -258,11 +261,15 @@ contract Dex is Wallet, OrderBook {
         if (side == Side.BUY) {
             uint256 buyersTokensToSwapBalance = balances[msg.sender][tickerFrom];
             require(buyersTokensToSwapBalance >= fillPrice , "Dex: Buyer doesn't have enough tokes");
+            lockedBalances[msg.sender][tickerFrom] += fillPrice;
+            require(lockedBalances[msg.sender][tickerFrom] <= balances[msg.sender][tickerFrom] , "Dex: Buyer doesn't have available tokes for trading");
         }
         else {
             // Seller can't offer tokens for swap he doesn't have
             uint256 sellersTokensToSwapBalance = balances[msg.sender][tickerTo];
             require(sellersTokensToSwapBalance >= amount, "Dex: Seller doesn't have enough tokes");
+            lockedBalances[msg.sender][tickerTo] += amount;
+            require(lockedBalances[msg.sender][tickerTo] <= balances[msg.sender][tickerTo], "Dex: Seller doesn't have available tokes for trading");
         }
 
         uint256 orderId = super.createOrder(side, orderType, tickerTo, tickerFrom, price, amount);
