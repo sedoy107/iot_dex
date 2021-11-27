@@ -153,37 +153,41 @@ describe("Dex Hack Test", async () => {
     }
 
 
-    contract("double spend test", async accounts => {
+    contract("over-allocation test", async accounts => {
 
         before("setup contracts and deposit tokens", async () => setupTest1(accounts))
 
         it ("should create a buy order that costs the entire balance of MATIC tokens", async () => {
             
-            await truffleAssertions.passes (
-                // buy 500 LINK @ 1 MATIC
-                dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '1000000000000000000', '500000000000000000000', {from: accounts[5]})
-            )
+            // buy 500 LINK @ 1 MATIC
+            tx = await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '1000000000000000000', '500000000000000000000', {from: accounts[5]})
+            verifyOrderCreated (tx, 0, accounts[5], BUY, LIMIT, '1000000000000000000', '500000000000000000000')
         })
         
-        it ("should not create another order that costs 50 MATIC tokens as they should be locked by the previous order", async () => {
-            await truffleAssertions.reverts (
-                // buy 50 LINK @ 1 MATIC once again
-                dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '1000000000000000000', '50000000000000000000', {from: accounts[5]})
-            )
+        it ("should create another order that costs 50 MATIC tokens that would no longer be available should the previous order become filled", async () => {
+            // buy 50 LINK @ 1 MATIC once again
+            tx = await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '99999999999999999', '50000000000000000000', {from: accounts[5]})
+            verifyOrderCreated (tx, 1, accounts[5], BUY, LIMIT, '99999999999999999', '50000000000000000000')
         })
         
         it ("should fill the first 500 LINK for 500 MATIC", async () => {
-            await truffleAssertions.passes (
-                // sell 500 LINK @ 1 MATIC once again
-                dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '1000000000000000000', '500000000000000000000', {from: accounts[1]})
-            )
+            // sell 500 LINK @ 1 MATIC once again
+            tx = await dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '1000000000000000000', '500000000000000000000', {from: accounts[1]})
+            verifyOrderCreated (tx, 2, accounts[1], SELL, LIMIT, '1000000000000000000', '500000000000000000000')
+            verifyOrderFilled(tx, 0, accounts[5], '1000000000000000000', '500000000000000000000')
+            verifyOrderFilled(tx, 2, accounts[1], '1000000000000000000', '500000000000000000000')
+            verifyOrderRemoved(tx, 0, accounts[5], '500000000000000000000')
+            verifyOrderRemoved(tx, 2, accounts[1], '500000000000000000000')
+            await verifyBalances(accounts[5], link.ticker, matic.ticker, '1000000000000000000000', '0')
+            await verifyBalances(accounts[1], link.ticker, matic.ticker, '0', '1000000000000000000000')
         })
 
-        it ("should not fill the order for 50 LINK for 50 MATIC", async () => {
-            await truffleAssertions.passes (
-                // sell 500 LINK @ 1 MATIC once again
-                dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '1000000000000000000', '50000000000000000000', {from: accounts[2]})
-            )
+        it ("should remove the order w/o filling any amount", async () => {
+            // sell 500 LINK @ 1 MATIC once again
+            tx = await dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '99999999999999999', '50000000000000000000', {from: accounts[2]})
+            verifyOrderCreated (tx, 3, accounts[2], SELL, LIMIT, '99999999999999999', '50000000000000000000')
+            verifyOrderRemoved(tx, 1, accounts[5], '0')
+            truffleAssertions.eventNotEmitted(tx, "OrderFilled")
         })
     })
 })

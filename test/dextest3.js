@@ -438,7 +438,7 @@ describe("Dex Test", async () => {
         })
     })
     
-    contract("test market order", async accounts => {
+    contract.only("test market order", async accounts => {
 
         beforeEach("setup contracts and deposit tokens", async () => setupTest2(accounts))
 
@@ -825,7 +825,7 @@ describe("Dex Test", async () => {
     
     }
 
-    contract.only("more tests using ETH and USDP", async accounts => {
+    contract("more tests using ETH and USDP", async accounts => {
         
         before("setup contracts and deposit tokens", async () => setupTest5(accounts))
 
