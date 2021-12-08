@@ -75,18 +75,18 @@ module.exports = async function(callback) {
     async function createTrades1(accounts) {
 
       // Fill the BUY side
-      await dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '3000000000000000000', (5 * (10 ** 17)).toString(), {from: accounts[5]}) // buy 0.5 LINK @ 3 MATIC 
-      await dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '2500000000000000000', (5 * (10 ** 17)).toString(), {from: accounts[4]}) // buy 0.5 LINK @ 2.5 MATIC 
-      await dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '2000000000000000000', (5 * (10 ** 17)).toString(), {from: accounts[3]}) // buy 0.5 LINK @ 2 MATIC 
-      await dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '1500000000000000000', (5 * (10 ** 17)).toString(), {from: accounts[2]}) // buy 0.5 LINK @ 1.5 MATIC 
-      await dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '1000000000000000000', (5 * (10 ** 17)).toString(), {from: accounts[1]}) // buy 0.5 LINK @ 1 MATIC 
+      await dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '3000000000000000000', (5 * (10 ** 16)).toString(), {from: accounts[5]}) // buy 0.5 LINK @ 3 MATIC 
+      await dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '2500000000000000000', (5 * (10 ** 16)).toString(), {from: accounts[4]}) // buy 0.5 LINK @ 2.5 MATIC 
+      await dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '2000000000000000000', (5 * (10 ** 16)).toString(), {from: accounts[3]}) // buy 0.5 LINK @ 2 MATIC 
+      await dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '1500000000000000000', (5 * (10 ** 16)).toString(), {from: accounts[2]}) // buy 0.5 LINK @ 1.5 MATIC 
+      await dex.createOrder(SELL, LIMIT, link.ticker, matic.ticker, '1000000000000000000', (5 * (10 ** 16)).toString(), {from: accounts[1]}) // buy 0.5 LINK @ 1 MATIC 
     
       // Fill the SELL side
-      await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '9000000000000000000', (5 * (10 ** 17)).toString(), {from: accounts[1]}) // sell 0.5 LINK @ 9 MATIC
-      await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '8500000000000000000', (5 * (10 ** 17)).toString(), {from: accounts[2]}) // sell 0.5 LINK @ 8.5 MATIC
-      await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '8000000000000000000', (5 * (10 ** 17)).toString(), {from: accounts[3]}) // sell 0.5 LINK @ 8 MATIC
-      await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '7500000000000000000', (5 * (10 ** 17)).toString(), {from: accounts[4]}) // sell 0.5 LINK @ 7.5 MATIC
-      await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '7000000000000000000', (5 * (10 ** 17)).toString(), {from: accounts[5]}) // sell 0.5 LINK @ 7 MATIC
+      await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '9000000000000000000', (5 * (10 ** 16)).toString(), {from: accounts[1]}) // sell 0.5 LINK @ 9 MATIC
+      await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '8500000000000000000', (5 * (10 ** 16)).toString(), {from: accounts[2]}) // sell 0.5 LINK @ 8.5 MATIC
+      await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '8000000000000000000', (5 * (10 ** 16)).toString(), {from: accounts[3]}) // sell 0.5 LINK @ 8 MATIC
+      await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '7500000000000000000', (5 * (10 ** 16)).toString(), {from: accounts[4]}) // sell 0.5 LINK @ 7.5 MATIC
+      await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '7000000000000000000', (5 * (10 ** 16)).toString(), {from: accounts[5]}) // sell 0.5 LINK @ 7 MATIC
     
     }
 
@@ -127,9 +127,10 @@ module.exports = async function(callback) {
     }
 
     await initDex(accounts)
-    await createTrades1(accounts)
-    await createTrades3(accounts)
-    await createTrades4(accounts)
+    await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '3000000000000000000', (5 * (10 ** 18)).toString(), {from: accounts[5]}) // buy 0.05 LINK @ 3 MATIC 
+    //await createTrades1(accounts)
+    //await createTrades3(accounts)
+    //await createTrades4(accounts)
 
 
   }

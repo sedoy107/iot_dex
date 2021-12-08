@@ -78,7 +78,7 @@ module.exports = async function(callback) {
           await dex.addToken(baseToken.ticker, baseToken.address)
           await dex.addPair(eth.ticker, baseToken.ticker)
           console.log(`Pair added: ${eth.symbol}/${baseToken.symbol}`)
-          for (let pairedToken of tokens.slice(i + 1) ) {
+          for (let pairedToken of tokens.slice(parseInt(i) + 1) ) {
             await dex.addPair(baseToken.ticker, pairedToken.ticker)
             console.log(`Pair added: ${baseToken.symbol}/${pairedToken.symbol}`)
           }

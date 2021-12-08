@@ -82,6 +82,7 @@ module.exports = async function(callback) {
 
               // Transfer some tokens to the target account `accounts[accountId]`
               await erc20.transfer(accounts[accountId], quantity)
+              await erc20.transfer(accounts[accountId], quantity)
               // Approve Dex for spending the funds on behalf of the target account `accounts[accountId]`
               await erc20.approve(dex.address, quantity, {from: accounts[accountId]})
               
@@ -221,10 +222,11 @@ module.exports = async function(callback) {
     }
 
     await initDex(accounts)
-    await createTrades1(accounts)
-    await createTrades2(accounts)
-    await createTrades3(accounts)
-    await createTrades4(accounts)
+    // await createTrades1(accounts)
+    // await createTrades2(accounts)
+    // await createTrades3(accounts)
+    // await createTrades4(accounts)
+    // await dex.createOrder(BUY, LIMIT, link.ticker, matic.ticker, '3000000000000000000', (5 * (10 ** 18)).toString(), {from: accounts[5]}) // buy 5 LINK @ 3 MATIC 
 
     console.log(accounts)
 
