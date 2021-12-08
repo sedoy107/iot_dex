@@ -18,11 +18,11 @@
  *
  */
 
-// const HDWalletProvider = require('@truffle/hdwallet-provider');
-// const infuraKey = "fj4jll3k.....";
+const HDWalletProvider = require('@truffle/hdwallet-provider');
+const infuraKey = "ef7d535d2fae48ab9e620c46dbd8788a";
 //
-// const fs = require('fs');
-// const mnemonic = fs.readFileSync(".secret").toString().trim();
+const fs = require('fs');
+const mnemonic = fs.readFileSync(".secret").toString().trim();
 
 module.exports = {
   /**
@@ -72,6 +72,12 @@ module.exports = {
     // network_id: 2111,   // This network is yours, in the cloud.
     // production: true    // Treats this network as if it was a public net. (default: false)
     // }
+    kovan: {
+      provider: () => new HDWalletProvider(mnemonic, `hhttps://kovan.infura.io/v3/${infuraKey}`),
+      gas: 5000000,
+      gasPrice: 25000000000,
+      network_id: 42
+    }
   },
 
   // Set default mocha options here, use special reporters etc.
