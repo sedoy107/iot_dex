@@ -6,9 +6,6 @@ const Polygon = artifacts.require("Polygon")
 const WrappedBitcoin = artifacts.require("WrappedBitcoin")
 const StableCoin = artifacts.require("StableCoin")
 
-const Chance = require('chance')
-const chance = new Chance()
-
 const truffleAssertions = require('truffle-assertions')
 
 describe("Dex Test", async () => {
