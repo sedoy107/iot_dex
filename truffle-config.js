@@ -73,9 +73,9 @@ module.exports = {
     // production: true    // Treats this network as if it was a public net. (default: false)
     // }
     kovan: {
-      provider: () => new HDWalletProvider(mnemonic, `hhttps://kovan.infura.io/v3/${infuraKey}`),
-      gas: 5000000,
-      gasPrice: 25000000000,
+      provider: () => new HDWalletProvider(mnemonic, `https://kovan.infura.io/v3/${infuraKey}`),
+      gas: 6000000,
+      gasPrice: 24100000000,
       network_id: 42
     }
   },
@@ -90,13 +90,13 @@ module.exports = {
     solc: {
       version: "^0.8.0",    // Fetch exact version from solc-bin (default: truffle's version)
       // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
-      // settings: {          // See the solidity docs for advice about optimization and evmVersion
-      //  optimizer: {
-      //    enabled: false,
-      //    runs: 200
-      //  },
-      //  evmVersion: "byzantium"
-      // }
+      settings: {          // See the solidity docs for advice about optimization and evmVersion
+       optimizer: {
+         enabled: false,
+         runs: 1000
+       },
+       evmVersion: "byzantium"
+      }
     }
   },
 
